@@ -403,14 +403,16 @@ QLineEdit#NicIpEdit:focus, QLineEdit#NicMaskEdit:focus {
   border: 1px solid #00D2FF;
 }
 QWidget#NicUac, QWidget#NicUacOff {
-  border-radius: 13px;
+  min-height: 28px;
+  max-height: 28px;
+  border-radius: 14px;
 }
 QWidget#NicUac {
-  background: rgba(245, 158, 11, 0.08);
-  border: 1px solid rgba(245, 158, 11, 0.6);
+  background-color: rgba(69, 26, 3, 0.55);
+  border: 1px solid rgba(217, 119, 6, 0.75);
 }
 QWidget#NicUacOff {
-  background: rgba(30, 41, 59, 0.8);
+  background-color: rgba(30, 41, 59, 0.85);
   border: 1px solid #475569;
 }
 QWidget#NicUac QLabel, QWidget#NicUacOff QLabel {
@@ -421,12 +423,12 @@ QWidget#NicUac QLabel, QWidget#NicUacOff QLabel {
 QWidget#NicUac QLabel#UacText {
   color: #FBBF24;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 QWidget#NicUacOff QLabel#UacText {
   color: #94a3b8;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 QLabel#NicTopoIcon {
   background-color: #06182C;
@@ -773,14 +775,18 @@ QLabel#Badge {
   color: #67e8f9;
 }
 QWidget#Uac {
-  background: rgba(120,53,15,0.45);
-  border: 1px solid rgba(245,158,11,0.55);
-  border-radius: 6px;
+  background: rgba(69, 26, 3, 0.55);
+  border: 1px solid rgba(217, 119, 6, 0.75);
+  border-radius: 12px;
+  min-height: 24px;
+  max-height: 24px;
 }
 QWidget#UacOff {
-  background: rgba(30,41,59,0.8);
+  background: rgba(30, 41, 59, 0.85);
   border: 1px solid #475569;
-  border-radius: 6px;
+  border-radius: 12px;
+  min-height: 24px;
+  max-height: 24px;
 }
 QWidget#Uac QLabel, QWidget#UacOff QLabel {
   background: transparent;
@@ -970,8 +976,8 @@ void MainWindow::buildUi()
     m_uacBadge->installEventFilter(this);
     m_uacBadge->setAttribute(Qt::WA_StyledBackground, true);
     auto *uacLay = new QHBoxLayout(m_uacBadge);
-    uacLay->setContentsMargins(6, 3, 9, 3);
-    uacLay->setSpacing(5);
+    uacLay->setContentsMargins(10, 0, 12, 0);
+    uacLay->setSpacing(6);
     m_uacIcon = new QLabel;
     m_uacIcon->setFixedSize(14, 14);
     m_uacIcon->setAttribute(Qt::WA_TransparentForMouseEvents, true);
@@ -1520,8 +1526,8 @@ void MainWindow::buildUi()
     m_nicUacBadge->setAttribute(Qt::WA_StyledBackground, true);
     m_nicUacBadge->installEventFilter(this);
     auto *nicUacLay = new QHBoxLayout(m_nicUacBadge);
-    nicUacLay->setContentsMargins(12, 4, 12, 4);
-    nicUacLay->setSpacing(6);
+    nicUacLay->setContentsMargins(14, 0, 16, 0);
+    nicUacLay->setSpacing(8);
     m_nicUacIcon = new QLabel;
     m_nicUacIcon->setFixedSize(14, 14);
     m_nicUacIcon->setAttribute(Qt::WA_TransparentForMouseEvents, true);
