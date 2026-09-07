@@ -224,30 +224,30 @@ QPushButton#Danger {
 }
 QFrame#TabStrip QPushButton {
   background: transparent;
-  border: none;
-  border-radius: 4px;
-  padding: 0px 10px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 0px 12px;
   margin: 0px;
   min-height: 0px;
-  max-height: 24px;
+  max-height: 28px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
 }
 QFrame#TabStrip QPushButton#TabActive {
-  background: rgba(16,185,129,0.28);
+  background: rgba(6, 78, 59, 0.55);
+  border: 2px solid #34d399;
   color: #6ee7b7;
-  border: none;
 }
 QFrame#TabStrip QPushButton#TabActiveCyan {
-  background: rgba(6,182,212,0.28);
+  background: rgba(8, 51, 68, 0.65);
+  border: 2px solid #22d3ee;
   color: #67e8f9;
-  border: none;
 }
 QFrame#TabStrip QPushButton#TabActiveIndigo {
-  background: rgba(99,102,241,0.30);
+  background: rgba(49, 46, 129, 0.55);
+  border: 2px solid #818cf8;
   color: #a5b4fc;
-  border: none;
 }
 QFrame#TabStrip {
   background: #0d182b;
@@ -459,12 +459,12 @@ void MainWindow::buildUi()
     tabs->setObjectName(QStringLiteral("TabStrip"));
     tabs->setFrameShape(QFrame::NoFrame);
     tabs->setAttribute(Qt::WA_StyledBackground, true);
-    tabs->setFixedHeight(32);
+    // 外框略高，给 2px 霓虹描边 + 内边距留空
+    tabs->setFixedHeight(36);
     tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     auto *tabsLay = new QHBoxLayout(tabs);
-    // 外框 32px，上下各留 4px，按钮固定 24px，选中块不会顶到边线
     tabsLay->setContentsMargins(4, 4, 4, 4);
-    tabsLay->setSpacing(2);
+    tabsLay->setSpacing(4);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
     m_tabPortal = new QPushButton(QStringLiteral("局域网提货 Web 端"));
@@ -476,7 +476,7 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setFixedHeight(24);
+        b->setFixedHeight(28);
         b->setIconSize(QSize(14, 14));
         b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
