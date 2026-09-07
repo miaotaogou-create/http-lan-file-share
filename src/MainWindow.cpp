@@ -65,20 +65,20 @@ static QString fmtBytes(qint64 n)
 
 static QIcon makeWinChromeIcon(int kind)
 {
-    // 0 最小化  1 最大化  2 关闭 — 对齐 Win11 线框风格
-    QPixmap pm(46, 32);
+    // 0 最小化  1 最大化  2 关闭 — 更接近 Win11 细线图标
+    QPixmap pm(36, 28);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, false);
     const QColor c(203, 213, 225); // slate-300
     p.setPen(QPen(c, 1));
     if (kind == 0) {
-        p.drawLine(17, 16, 29, 16);
+        p.drawLine(13, 14, 23, 14);
     } else if (kind == 1) {
-        p.drawRect(17, 10, 12, 12);
+        p.drawRect(13, 9, 10, 10);
     } else {
-        p.drawLine(17, 10, 29, 22);
-        p.drawLine(29, 10, 17, 22);
+        p.drawLine(13, 9, 23, 19);
+        p.drawLine(23, 9, 13, 19);
     }
     return QIcon(pm);
 }
@@ -87,8 +87,8 @@ static QToolButton *makeWinChromeBtn(QWidget *parent, int kind)
 {
     auto *b = new QToolButton(parent);
     b->setIcon(makeWinChromeIcon(kind));
-    b->setIconSize(QSize(46, 32));
-    b->setFixedSize(46, 32);
+    b->setIconSize(QSize(36, 28));
+    b->setFixedSize(36, 28);
     b->setAutoRaise(true);
     b->setCursor(Qt::ArrowCursor);
     b->setFocusPolicy(Qt::NoFocus);
@@ -185,10 +185,16 @@ void MainWindow::applyTheme()
 {
     setStyleSheet(QStringLiteral(R"QSS(
 QMainWindow, QWidget {
-  background: #070e1a;
   color: #e2e8f0;
   font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
   font-size: 12px;
+}
+QMainWindow, QWidget#TitleBar, QWidget#CentralRoot, QScrollArea, QScrollArea > QWidget > QWidget {
+  background: #070e1a;
+}
+QLabel {
+  background: transparent;
+  border: none;
 }
 QFrame#Card {
   background: #0b1424;
@@ -592,6 +598,7 @@ static QFrame *makeCard(QWidget *parent)
 void MainWindow::buildUi()
 {
     auto *central = new QWidget(this);
+    central->setObjectName(QStringLiteral("CentralRoot"));
     setCentralWidget(central);
     auto *root = new QVBoxLayout(central);
     root->setContentsMargins(0, 0, 0, 0);
@@ -683,7 +690,7 @@ void MainWindow::buildUi()
     auto *maxBtn = makeWinChromeBtn(m_titleBar, 1);
     auto *closeBtn = makeWinChromeBtn(m_titleBar, 2);
     auto *chrome = new QWidget;
-    chrome->setFixedHeight(32);
+    chrome->setFixedHeight(28);
     auto *chromeLay = new QHBoxLayout(chrome);
     chromeLay->setContentsMargins(0, 0, 0, 0);
     chromeLay->setSpacing(0);
