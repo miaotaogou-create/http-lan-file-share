@@ -33,6 +33,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QSizePolicy>
+#include <QFrame>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSpinBox>
@@ -227,25 +228,25 @@ QPushButton#TabActiveCyan,
 QPushButton#TabActiveIndigo {
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 5px 12px;
-  min-height: 28px;
+  border-radius: 4px;
+  padding: 4px 10px;
+  min-height: 26px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
 }
 QPushButton#TabActive {
-  background: rgba(16,185,129,0.2);
+  background: rgba(16,185,129,0.22);
   border: 1px solid rgba(16,185,129,0.45);
   color: #6ee7b7;
 }
 QPushButton#TabActiveCyan {
-  background: rgba(6,182,212,0.2);
+  background: rgba(6,182,212,0.22);
   border: 1px solid rgba(6,182,212,0.45);
   color: #67e8f9;
 }
 QPushButton#TabActiveIndigo {
-  background: rgba(99,102,241,0.2);
+  background: rgba(99,102,241,0.25);
   border: 1px solid rgba(99,102,241,0.45);
   color: #a5b4fc;
 }
@@ -307,11 +308,11 @@ QWidget#TitleBar {
   background: #09111e;
   border-bottom: 1px solid #1b2b46;
 }
-QWidget#TabStrip {
+QWidget#TabStrip, QFrame#TabStrip {
   background: #0d182b;
   border: 1px solid #1d3153;
   border-radius: 8px;
-  min-height: 34px;
+  min-height: 36px;
 }
 QPushButton#WinBtn {
   background: transparent;
@@ -456,11 +457,21 @@ void MainWindow::buildUi()
     lp->addWidget(m_uacBadge, 0, Qt::AlignVCenter);
     lp->addStretch(1);
 
-    auto *tabs = new QWidget;
+    auto *tabs = new QFrame;
     tabs->setObjectName(QStringLiteral("TabStrip"));
-    auto *tabsLay = new QHBoxLayout(tabs);
-    tabsLay->setContentsMargins(4, 2, 4, 2);
-    tabsLay->setSpacing(2);
+    tabs->setFrameShape(QFrame::NoFrame);
+    tabs->setAttribute(Qt::WA_StyledBackground, true);
+    tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+    auto *tabsOuter = new QHBoxLayout(tabs);
+    // 1px 留给 TabStrip 自身边框，内部再垫一圈，选中描边不会贴外框
+    tabsOuter->setContentsMargins(1, 1, 1, 1);
+    tabsOuter->setSpacing(0);
+
+    auto *tabsInner = new QWidget;
+    auto *tabsLay = new QHBoxLayout(tabsInner);
+    tabsLay->setContentsMargins(5, 4, 5, 4);
+    tabsLay->setSpacing(3);
+    tabsOuter->addWidget(tabsInner);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
     m_tabPortal = new QPushButton(QStringLiteral("局域网提货 Web 端"));
@@ -475,7 +486,8 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setMinimumHeight(30);
+        b->setMinimumHeight(28);
+        b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
 
     auto *managerWrap = new QWidget;
