@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QHash>
 #include <QPoint>
 
 class HttpFileServer;
@@ -67,6 +68,8 @@ private:
     void updateUacBadge();
     void updateMaxButtonIcon();
     void fitTableHeight(QTableWidget *table);
+    QWidget *makeFileNameCell(const QString &fileName);
+    QWidget *makeDownloadCountCell(int count);
     QWidget *makeFileActionBar(const QString &path, const QString &name);
     void updatePriorityPickup(const QString &path, const QString &name, qint64 size);
     QString currentShareUrl() const;
@@ -122,4 +125,5 @@ private:
 
     QString m_shareRoot;
     bool m_running = false;
+    QHash<QString, int> m_downloadCounts;
 };
