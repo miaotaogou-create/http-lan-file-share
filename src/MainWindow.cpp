@@ -226,10 +226,10 @@ QFrame#TabStrip QPushButton {
   background: transparent;
   border: 2px solid transparent;
   border-radius: 6px;
-  padding: 0px 12px;
+  padding: 0px 14px;
   margin: 0px;
   min-height: 0px;
-  max-height: 28px;
+  max-height: 32px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
@@ -418,7 +418,7 @@ void MainWindow::buildUi()
     // 顶栏：左品牌 | 居中页签 | 右窗控
     m_titleBar = new QWidget;
     m_titleBar->setObjectName(QStringLiteral("TitleBar"));
-    m_titleBar->setFixedHeight(48);
+    m_titleBar->setFixedHeight(50);
     m_titleBar->installEventFilter(this);
     auto *tb = new QHBoxLayout(m_titleBar);
     tb->setContentsMargins(10, 4, 6, 4);
@@ -459,11 +459,11 @@ void MainWindow::buildUi()
     tabs->setObjectName(QStringLiteral("TabStrip"));
     tabs->setFrameShape(QFrame::NoFrame);
     tabs->setAttribute(Qt::WA_StyledBackground, true);
-    // 外框略高，给 2px 霓虹描边 + 内边距留空
-    tabs->setFixedHeight(36);
+    // 外框略高，选中块更饱满，上下只留细缝
+    tabs->setFixedHeight(40);
     tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     auto *tabsLay = new QHBoxLayout(tabs);
-    tabsLay->setContentsMargins(4, 4, 4, 4);
+    tabsLay->setContentsMargins(3, 3, 3, 3);
     tabsLay->setSpacing(4);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
@@ -476,7 +476,7 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setFixedHeight(28);
+        b->setFixedHeight(32);
         b->setIconSize(QSize(14, 14));
         b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
