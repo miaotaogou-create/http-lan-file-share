@@ -83,25 +83,34 @@ void UacAuthDialog::initUi(bool alreadyElevated)
     auto *cardWrap = new QWidget;
     cardWrap->setFixedWidth(520);
     auto *wrapLay = new QVBoxLayout(cardWrap);
-    wrapLay->setContentsMargins(8, 8, 8, 8); // 给阴影留边
+    wrapLay->setContentsMargins(10, 10, 10, 10); // 给阴影留边
 
-    auto *container = new QWidget;
+    // 阴影挂在外壳上；描边单独一层，避免被标题背景盖住
+    auto *shadowHost = new QWidget;
+    shadowHost->setAttribute(Qt::WA_TranslucentBackground, true);
+    auto *shadow = new QGraphicsDropShadowEffect(shadowHost);
+    shadow->setBlurRadius(24);
+    shadow->setColor(QColor(245, 158, 11, 90));
+    shadow->setOffset(0, 4);
+    shadowHost->setGraphicsEffect(shadow);
+    auto *shadowLay = new QVBoxLayout(shadowHost);
+    shadowLay->setContentsMargins(0, 0, 0, 0);
+    shadowLay->setSpacing(0);
+
+    auto *container = new QFrame;
     container->setObjectName(QStringLiteral("dialogContainer"));
     container->setAttribute(Qt::WA_StyledBackground, true);
+    container->setFrameShape(QFrame::NoFrame);
     container->setStyleSheet(QStringLiteral(
-        "QWidget#dialogContainer {"
+        "QFrame#dialogContainer {"
         "  background-color:#050B14;"
-        "  border:1.5px solid #B45309;"
+        "  border:2px solid #F59E0B;"
         "  border-radius:10px;"
         "}"));
-    auto *shadow = new QGraphicsDropShadowEffect(container);
-    shadow->setBlurRadius(24);
-    shadow->setColor(QColor(180, 83, 9, 100));
-    shadow->setOffset(0, 4);
-    container->setGraphicsEffect(shadow);
 
+    // 内容整体内缩 2px，四边琥珀描边（含顶边）始终可见
     auto *containerLay = new QVBoxLayout(container);
-    containerLay->setContentsMargins(0, 0, 0, 0);
+    containerLay->setContentsMargins(2, 2, 2, 2);
     containerLay->setSpacing(0);
 
     // ---- 顶部预警标头 ----
@@ -111,8 +120,8 @@ void UacAuthDialog::initUi(bool alreadyElevated)
     header->setStyleSheet(QStringLiteral(
         "QWidget#headerWidget {"
         "  background-color:#261B0E;"
-        "  border-top-left-radius:9px;"
-        "  border-top-right-radius:9px;"
+        "  border-top-left-radius:8px;"
+        "  border-top-right-radius:8px;"
         "  border-bottom:1px solid #452D10;"
         "}"));
     auto *headerLay = new QHBoxLayout(header);
@@ -227,7 +236,8 @@ void UacAuthDialog::initUi(bool alreadyElevated)
     bodyLay->addLayout(btnRow);
     containerLay->addWidget(body);
 
-    wrapLay->addWidget(container);
+    shadowLay->addWidget(container);
+    wrapLay->addWidget(shadowHost);
     row->addWidget(cardWrap, 0);
     row->addStretch(1);
     root->addLayout(row);
