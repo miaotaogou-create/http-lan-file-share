@@ -18,7 +18,9 @@
 #include <QDesktopServices>
 #include <QEvent>
 #include <QFileDialog>
+#include <QFile>
 #include <QFileInfo>
+#include <QResource>
 #include <QFileSystemWatcher>
 #include <QFormLayout>
 #include <QFrame>
@@ -159,30 +161,31 @@ static QToolButton *makeWinChromeBtn(QWidget *parent, int kind)
 
 static QIcon makeTabIcon(int kind, const QColor &color)
 {
-    QPixmap pm(16, 16);
+    QString path;
+    if (kind == 0)
+        path = QStringLiteral(":/icons/sliders_panel.svg");
+    else if (kind == 1)
+        path = QStringLiteral(":/icons/mobile_device.svg");
+    else if (kind == 2)
+        path = QStringLiteral(":/icons/activity_monitor.svg");
+    else
+        return {};
+
+    QResource res(path);
+    if (!res.isValid())
+        return {};
+    // Qt Svg 不认 currentColor，按页签态替换成具体颜色
+    QByteArray svg(reinterpret_cast<const char *>(res.data()), int(res.size()));
+    svg.replace("currentColor", color.name(QColor::HexRgb).toLatin1());
+
+    QSvgRenderer renderer(svg);
+    if (!renderer.isValid())
+        return {};
+    QPixmap pm(15, 15);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing);
-    p.setPen(QPen(color, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    if (kind == 0) {
-        // 滑块/控制面板
-        p.drawLine(3, 4, 13, 4);
-        p.drawLine(3, 8, 13, 8);
-        p.drawLine(3, 12, 13, 12);
-        p.setBrush(color);
-        p.drawEllipse(QPointF(6, 4), 2, 2);
-        p.drawEllipse(QPointF(11, 8), 2, 2);
-        p.drawEllipse(QPointF(7, 12), 2, 2);
-    } else if (kind == 1) {
-        // 手机
-        p.setBrush(Qt::NoBrush);
-        p.drawRoundedRect(QRectF(5, 1.5, 6, 13), 1.5, 1.5);
-        p.drawLine(7, 12.5, 9, 12.5);
-    } else {
-        // 活动波形
-        p.drawPolyline(QPolygonF({QPointF(1, 10), QPointF(4, 10), QPointF(6, 4), QPointF(8, 13),
-                                  QPointF(10, 7), QPointF(12, 10), QPointF(15, 10)}));
-    }
+    p.setRenderHint(QPainter::Antialiasing, true);
+    renderer.render(&p, QRectF(0, 0, 15, 15));
     return QIcon(pm);
 }
 
