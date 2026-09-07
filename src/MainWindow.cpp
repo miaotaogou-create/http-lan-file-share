@@ -338,6 +338,25 @@ QPushButton#Primary {
   color: white;
   font-weight: 700;
 }
+QPushButton#UploadShareBtn {
+  background: rgba(6, 78, 59, 0.35);
+  border: 1px solid rgba(16, 185, 129, 0.70);
+  border-radius: 17px;
+  color: #34d399;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 16px;
+  min-height: 34px;
+}
+QPushButton#UploadShareBtn:hover {
+  background: rgba(6, 78, 59, 0.60);
+  border-color: #10b981;
+  color: #6ee7b7;
+}
+QPushButton#UploadShareBtn:pressed {
+  background: rgba(6, 78, 59, 0.85);
+  border-color: #059669;
+}
 QPushButton#Danger {
   background: #4c0519;
   border: 1px solid #fb7185;
@@ -1277,7 +1296,10 @@ void MainWindow::buildUi()
     fileTitleLay->addWidget(m_filePathLabel);
 
     auto *uploadBtn = new QPushButton(QStringLiteral("上传文件到共享目录"));
-    uploadBtn->setObjectName(QStringLiteral("Primary"));
+    uploadBtn->setObjectName(QStringLiteral("UploadShareBtn"));
+    uploadBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/upload_icon.svg"), 16));
+    uploadBtn->setIconSize(QSize(16, 16));
+    uploadBtn->setFixedHeight(34);
     uploadBtn->setCursor(Qt::PointingHandCursor);
 
     fileHead->addWidget(fileFolderIcon, 0, Qt::AlignTop);

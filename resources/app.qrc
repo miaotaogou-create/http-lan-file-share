@@ -35,5 +35,7 @@
     <file>icons/download_icon.svg</file>
     <file>icons/download_icon_cyan.svg</file>
     <file>icons/trash_delete.svg</file>
+    <file>icons/upload_icon.svg</file>
+    <file>icons/upload_icon_glow.svg</file>
   </qresource>
 </RCC>
