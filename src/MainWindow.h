@@ -90,7 +90,9 @@ private:
     QLabel *m_runDot = nullptr;
     QLabel *m_portalCount = nullptr;
 
-    QLabel *m_uacBadge = nullptr;
+    QWidget *m_uacBadge = nullptr;
+    QLabel *m_uacIcon = nullptr;
+    QLabel *m_uacText = nullptr;
     QPoint m_dragPos;
     bool m_dragging = false;
     StatusBadgeWidget *m_statusPill = nullptr;

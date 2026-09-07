@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
   <path
-    d="M12 2L4 5V11.09C4 16.14 7.41 20.85 12 22C16.59 20.85 20 16.14 20 11.09V5L12 2Z"
+    d="M12 2L4 5V11.5C4 16.5 7.4 20.8 12 22C16.6 20.8 20 16.5 20 11.5V5L12 2Z"
     stroke="#94A3B8"
-    stroke-width="2"
+    stroke-width="2.2"
     stroke-linecap="round"
     stroke-linejoin="round"
     fill="#94A3B8"
@@ -11,8 +11,8 @@
   <path
     d="M12 8V12"
     stroke="#94A3B8"
-    stroke-width="2.2"
+    stroke-width="2.4"
     stroke-linecap="round"
   />
-  <circle cx="12" cy="15.5" r="1.2" fill="#94A3B8"/>
+  <circle cx="12" cy="15.5" r="1.25" fill="#94A3B8"/>
 </svg>

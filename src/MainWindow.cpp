@@ -695,20 +695,27 @@ QLabel#Badge {
   padding: 2px 10px;
   color: #67e8f9;
 }
-QLabel#Uac {
+QWidget#Uac {
   background: rgba(120,53,15,0.45);
   border: 1px solid rgba(245,158,11,0.55);
   border-radius: 6px;
-  padding: 2px 9px 2px 6px;
+}
+QWidget#UacOff {
+  background: rgba(30,41,59,0.8);
+  border: 1px solid #475569;
+  border-radius: 6px;
+}
+QWidget#Uac QLabel, QWidget#UacOff QLabel {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+QWidget#Uac QLabel#UacText {
   color: #fcd34d;
   font-size: 11px;
   font-weight: 600;
 }
-QLabel#UacOff {
-  background: rgba(30,41,59,0.8);
-  border: 1px solid #475569;
-  border-radius: 6px;
-  padding: 2px 9px 2px 6px;
+QWidget#UacOff QLabel#UacText {
   color: #94a3b8;
   font-size: 11px;
   font-weight: 600;
@@ -879,11 +886,23 @@ void MainWindow::buildUi()
     auto *appName = new QLabel(QStringLiteral("HTTP 局域网极速文件共享客户端"));
     appName->setStyleSheet(QStringLiteral("font-size:13px;font-weight:700;color:#f8fafc;background:transparent;"));
 
-    m_uacBadge = new QLabel;
+    m_uacBadge = new QWidget;
     m_uacBadge->setObjectName(QStringLiteral("UacOff"));
     m_uacBadge->setCursor(Qt::PointingHandCursor);
     m_uacBadge->setToolTip(QStringLiteral("点击可请求管理员权限（真实 Windows UAC）"));
     m_uacBadge->installEventFilter(this);
+    m_uacBadge->setAttribute(Qt::WA_StyledBackground, true);
+    auto *uacLay = new QHBoxLayout(m_uacBadge);
+    uacLay->setContentsMargins(6, 3, 9, 3);
+    uacLay->setSpacing(5);
+    m_uacIcon = new QLabel;
+    m_uacIcon->setFixedSize(14, 14);
+    m_uacIcon->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    m_uacText = new QLabel;
+    m_uacText->setObjectName(QStringLiteral("UacText"));
+    m_uacText->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    uacLay->addWidget(m_uacIcon, 0, Qt::AlignVCenter);
+    uacLay->addWidget(m_uacText, 0, Qt::AlignVCenter);
 
     auto *leftPanel = new QWidget;
     auto *lp = new QHBoxLayout(leftPanel);
@@ -1606,19 +1625,11 @@ void MainWindow::changeEvent(QEvent *event)
 void MainWindow::updateUacBadge()
 {
     const bool elevated = NicManager::isElevated();
-    QSvgRenderer renderer(QString(elevated ? QStringLiteral(":/icons/shield_check.svg")
-                                           : QStringLiteral(":/icons/shield_off.svg")));
-    QPixmap pm(16, 16);
-    pm.fill(Qt::transparent);
-    {
-        QPainter p(&pm);
-        p.setRenderHint(QPainter::Antialiasing);
-        renderer.render(&p, QRectF(0, 0, 16, 16));
-    }
-
-    m_uacBadge->setPixmap(pm);
+    const QString iconPath = elevated ? QStringLiteral(":/icons/shield_check.svg")
+                                      : QStringLiteral(":/icons/shield_off.svg");
+    m_uacIcon->setPixmap(loadSvgPixmap(iconPath, 14));
     m_uacBadge->setObjectName(elevated ? QStringLiteral("Uac") : QStringLiteral("UacOff"));
-    m_uacBadge->setText(elevated ? QStringLiteral("  UAC 已授权") : QStringLiteral("  UAC 未授权 · 点击提权"));
+    m_uacText->setText(elevated ? QStringLiteral("UAC 已授权") : QStringLiteral("UAC 未授权 · 点击提权"));
     m_uacBadge->setToolTip(elevated ? QStringLiteral("当前进程已通过 Windows UAC 提权（TokenElevation=1）")
                                     : QStringLiteral("当前为标准权限。点击将弹出系统 UAC，同意后以管理员重启。"));
     m_uacBadge->style()->unpolish(m_uacBadge);
@@ -2275,7 +2286,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     || w->objectName() == QLatin1String("TabStrip")
                     || w->objectName() == QLatin1String("PortalCount")
                     || w->objectName() == QLatin1String("RunDot")
-                    || w->objectName() == QLatin1String("Uac"))
+                    || w->objectName() == QLatin1String("Uac")
+                    || w->objectName() == QLatin1String("UacOff")
+                    || w->objectName() == QLatin1String("UacText"))
                     return QMainWindow::eventFilter(watched, event);
             }
             m_dragging = true;
