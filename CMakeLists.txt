@@ -21,6 +21,7 @@ set(APP_SOURCES
   src/ActivityLogModel.cpp
   src/QrCodeWidget.cpp
   src/SelfCheckDialog.cpp
+  src/StatusBadgeWidget.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 

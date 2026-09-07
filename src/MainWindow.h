@@ -6,6 +6,7 @@
 class HttpFileServer;
 class ActivityLogModel;
 class QrCodeWidget;
+class StatusBadgeWidget;
 class QLabel;
 class QLineEdit;
 class QSpinBox;
@@ -82,7 +83,7 @@ private:
     QLabel *m_uacBadge = nullptr;
     QPoint m_dragPos;
     bool m_dragging = false;
-    QLabel *m_statusPill = nullptr;
+    StatusBadgeWidget *m_statusPill = nullptr;
     QPushButton *m_toggleBtn = nullptr;
     QLineEdit *m_folderEdit = nullptr;
     QSpinBox *m_portSpin = nullptr;

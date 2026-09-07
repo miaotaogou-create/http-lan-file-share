@@ -1,5 +1,6 @@
 #include "MainWindow.h"
 #include "SelfCheckDialog.h"
+#include "StatusBadgeWidget.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -827,8 +828,7 @@ void MainWindow::buildUi()
     titleRow->setSpacing(10);
     auto *httpTitle = new QLabel(QStringLiteral("局域网 HTTP 极速文件共享服务"));
     httpTitle->setObjectName(QStringLiteral("Title"));
-    m_statusPill = new QLabel(QStringLiteral("共享服务已停止"));
-    m_statusPill->setObjectName(QStringLiteral("Badge"));
+    m_statusPill = new StatusBadgeWidget;
     titleRow->addWidget(httpTitle, 0, Qt::AlignVCenter);
     titleRow->addWidget(m_statusPill, 0, Qt::AlignVCenter);
     titleRow->addStretch(1);
@@ -1264,11 +1264,11 @@ void MainWindow::setRunningUi(bool running)
     if (running) {
         m_toggleBtn->setText(QStringLiteral("停止 HTTP 共享"));
         m_toggleBtn->setObjectName(QStringLiteral("Danger"));
-        m_statusPill->setText(QStringLiteral("共享服务运行中"));
+        m_statusPill->setRunning(true);
     } else {
         m_toggleBtn->setText(QStringLiteral("一键启动 HTTP 共享"));
         m_toggleBtn->setObjectName(QStringLiteral("Primary"));
-        m_statusPill->setText(QStringLiteral("共享服务已停止"));
+        m_statusPill->setRunning(false);
     }
     m_toggleBtn->style()->unpolish(m_toggleBtn);
     m_toggleBtn->style()->polish(m_toggleBtn);
