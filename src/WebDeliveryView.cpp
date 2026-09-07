@@ -3,12 +3,14 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QFileInfo>
+#include <QFontMetrics>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPainter>
+#include <QPaintEvent>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QSizePolicy>
@@ -52,6 +54,42 @@ QString iconBorderForName(const QString &fileName)
         return QStringLiteral("#9333EA");
     return QStringLiteral("#0284C7");
 }
+
+// QLabel 的 QSS border-radius 在 Windows 上经常画成直角，手绘胶囊更稳
+class CapsuleBadge : public QWidget
+{
+public:
+    explicit CapsuleBadge(const QString &text, QWidget *parent = nullptr)
+        : QWidget(parent)
+        , m_text(text)
+    {
+        setFixedHeight(24);
+        setAttribute(Qt::WA_OpaquePaintEvent, false);
+        QFont f = font();
+        f.setPixelSize(11);
+        f.setBold(true);
+        setFont(f);
+        setFixedWidth(QFontMetrics(f).horizontalAdvance(m_text) + 24);
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing, true);
+        p.setRenderHint(QPainter::TextAntialiasing, true);
+        const QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
+        const qreal radius = r.height() / 2.0;
+        p.setBrush(QColor(8, 51, 68));
+        p.setPen(QPen(QColor(34, 211, 238, 140), 1));
+        p.drawRoundedRect(r, radius, radius);
+        p.setPen(QColor(103, 232, 249));
+        p.drawText(r, Qt::AlignCenter, m_text);
+    }
+
+private:
+    QString m_text;
+};
 
 } // namespace
 
@@ -155,19 +193,7 @@ QWidget *WebDeliveryView::createHeroHeader()
 
     auto *badgeRow = new QHBoxLayout;
     badgeRow->setSpacing(10);
-    auto *serviceBadge = new QLabel(QStringLiteral("HTTP LAN File Delivery"));
-    serviceBadge->setAttribute(Qt::WA_StyledBackground, true);
-    serviceBadge->setAlignment(Qt::AlignCenter);
-    serviceBadge->setStyleSheet(QStringLiteral(
-        "QLabel {"
-        "  background-color:#083344;"
-        "  border:1px solid rgba(34,211,238,0.45);"
-        "  border-radius:999px;"
-        "  color:#67E8F9;"
-        "  font-size:11px;"
-        "  font-weight:700;"
-        "  padding:4px 12px;"
-        "}"));
+    auto *serviceBadge = new CapsuleBadge(QStringLiteral("HTTP LAN File Delivery"));
     m_runningLabel = new QLabel;
     m_runningLabel->setTextFormat(Qt::RichText);
     m_runningLabel->setStyleSheet(QStringLiteral("font-size:12px;font-weight:700;background:transparent;"));
