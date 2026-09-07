@@ -88,8 +88,8 @@ LogMonitorView::LogMonitorView(QWidget *parent)
     setStyleSheet(QStringLiteral(
         "QWidget#LogMonitorView { background-color:#070e1a; }"
         "QFrame#LogCard {"
-        "  background-color:#030814;"
-        "  border:1px solid #0F2036;"
+        "  background-color:#0b1424;"
+        "  border:1px solid #1b2b46;"
         "  border-radius:10px;"
         "}"
         "QScrollArea { background:transparent; border:none; }"
@@ -98,9 +98,9 @@ LogMonitorView::LogMonitorView(QWidget *parent)
         "  background:transparent; width:6px; margin:4px 2px 4px 0;"
         "}"
         "QScrollBar::handle:vertical {"
-        "  background:#1E293B; border-radius:3px; min-height:24px;"
+        "  background:#334155; border-radius:3px; min-height:24px;"
         "}"
-        "QScrollBar::handle:vertical:hover { background:#334155; }"
+        "QScrollBar::handle:vertical:hover { background:#475569; }"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height:0; }"));
 
     auto *root = new QHBoxLayout(this);
@@ -121,8 +121,8 @@ LogMonitorView::LogMonitorView(QWidget *parent)
     console->setAttribute(Qt::WA_StyledBackground, true);
     console->setStyleSheet(QStringLiteral(
         "QFrame#LogConsole {"
-        "  background-color:#02060D;"
-        "  border:1px solid #0B1728;"
+        "  background-color:#070d18;"
+        "  border:1px solid #182840;"
         "  border-radius:8px;"
         "}"));
     auto *consoleLay = new QVBoxLayout(console);
@@ -178,7 +178,7 @@ QWidget *LogMonitorView::createHeader()
     m_countBadge->setAttribute(Qt::WA_StyledBackground, true);
     m_countBadge->setStyleSheet(QStringLiteral(
         "QLabel {"
-        "  background-color:#111C2E; border:1px solid #1E2D44; border-radius:4px;"
+        "  background-color:#1e293b; border:1px solid #334155; border-radius:4px;"
         "  color:#94A3B8; font-size:11px; padding:1px 6px;"
         "}"));
     lay->addWidget(m_countBadge, 0, Qt::AlignVCenter);
@@ -234,9 +234,9 @@ QWidget *LogMonitorView::createRow(const QString &timestamp, const QString &type
     row->setStyleSheet(QStringLiteral(
         "QWidget#logRowItem {"
         "  background-color:transparent;"
-        "  border-bottom:1px solid #091322;"
+        "  border-bottom:1px solid #1a2d48;"
         "}"
-        "QWidget#logRowItem:hover { background-color:#071324; }"));
+        "QWidget#logRowItem:hover { background-color:#0c182b; }"));
 
     auto *lay = new QHBoxLayout(row);
     lay->setContentsMargins(8, 0, 8, 0);
