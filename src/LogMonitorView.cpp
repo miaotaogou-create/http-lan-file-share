@@ -75,83 +75,72 @@ QString toRichMessage(const QString &message)
     return QStringLiteral("<span style='color:#E2E8F0;'>%1</span>").arg(out);
 }
 
-// 行内事件图标：手绘 Lucide 风格，避开 Windows 系统 emoji/符号字形变形
+// 行内事件图标：按参考 24x24 坐标手绘（下载/电源/脉冲/盾牌）
 QPixmap makeTypeIcon(const QString &type, int size)
 {
     QPixmap pm(size, size);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
-    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
-    const qreal s = size / 24.0;
-    p.scale(s, s);
 
-    auto strokePen = [](const QColor &c, qreal w = 2.2) {
+    const qreal scale = size / 24.0;
+    p.translate(0, 0);
+    p.scale(scale, scale);
+
+    auto penOf = [](const QColor &c, qreal w) {
         return QPen(c, w, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
     };
 
     if (type == QLatin1String("download")) {
-        // ArrowDownToLine
-        p.setPen(strokePen(QColor(0x10, 0xB9, 0x81)));
+        p.setPen(penOf(QColor(16, 185, 129), 2.5));
         p.setBrush(Qt::NoBrush);
-        QPainterPath path;
-        path.moveTo(12, 4);
-        path.lineTo(12, 15);
-        path.moveTo(12, 15);
-        path.lineTo(7.5, 10.5);
-        path.moveTo(12, 15);
-        path.lineTo(16.5, 10.5);
-        path.moveTo(5, 19.5);
-        path.lineTo(19, 19.5);
-        p.drawPath(path);
+        p.drawLine(QPointF(12.0, 3.0), QPointF(12.0, 15.0));
+        p.drawLine(QPointF(12.0, 15.0), QPointF(7.5, 10.5));
+        p.drawLine(QPointF(12.0, 15.0), QPointF(16.5, 10.5));
+        p.drawLine(QPointF(5.5, 20.0), QPointF(18.5, 20.0));
     } else if (type == QLatin1String("upload")) {
-        p.setPen(strokePen(QColor(0x22, 0xD3, 0xEE)));
+        p.setPen(penOf(QColor(34, 211, 238), 2.5));
         p.setBrush(Qt::NoBrush);
-        QPainterPath path;
-        path.moveTo(12, 20);
-        path.lineTo(12, 9);
-        path.moveTo(12, 9);
-        path.lineTo(7.5, 13.5);
-        path.moveTo(12, 9);
-        path.lineTo(16.5, 13.5);
-        path.moveTo(5, 4.5);
-        path.lineTo(19, 4.5);
-        p.drawPath(path);
+        p.drawLine(QPointF(12.0, 21.0), QPointF(12.0, 9.0));
+        p.drawLine(QPointF(12.0, 9.0), QPointF(7.5, 13.5));
+        p.drawLine(QPointF(12.0, 9.0), QPointF(16.5, 13.5));
+        p.drawLine(QPointF(5.5, 4.0), QPointF(18.5, 4.0));
     } else if (type == QLatin1String("start") || type == QLatin1String("stop")) {
-        const QColor c = (type == QLatin1String("start")) ? QColor(0x00, 0xE5, 0xFF)
-                                                          : QColor(0xF8, 0x71, 0x71);
-        p.setPen(strokePen(c, 2.3));
+        const QColor c = (type == QLatin1String("start")) ? QColor(0, 229, 255)
+                                                          : QColor(248, 113, 113);
+        p.setPen(penOf(c, 2.4));
         p.setBrush(Qt::NoBrush);
-        // Power：上竖线 + 下方开口圆环
-        p.drawLine(QPointF(12, 3.5), QPointF(12, 11.5));
-        QPainterPath arc;
-        arc.moveTo(18.2, 7.2);
-        arc.arcTo(QRectF(4.2, 4.8, 15.6, 15.6), 50, 260);
-        p.drawPath(arc);
+        // 竖插棒与圆环开口分离，不碰弧端
+        p.drawLine(QPointF(12.0, 2.5), QPointF(12.0, 11.5));
+        QPainterPath arcPath;
+        const QRectF circleBox(3.5, 3.5, 17.0, 17.0);
+        arcPath.arcMoveTo(circleBox, 45);
+        arcPath.arcTo(circleBox, 45, 270);
+        p.drawPath(arcPath);
     } else if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del")) {
-        p.setPen(strokePen(QColor(0xF5, 0x9E, 0x0B), 2.1));
+        p.setPen(penOf(QColor(245, 158, 11), 2.4));
         p.setBrush(Qt::NoBrush);
-        QPainterPath shield;
-        shield.moveTo(12, 3);
-        shield.lineTo(5, 5.8);
-        shield.lineTo(5, 12.2);
-        shield.cubicTo(5, 16.8, 8.2, 20.2, 12, 21.5);
-        shield.cubicTo(15.8, 20.2, 19, 16.8, 19, 12.2);
-        shield.lineTo(19, 5.8);
-        shield.closeSubpath();
-        p.drawPath(shield);
+        QPainterPath shieldPath;
+        shieldPath.moveTo(12.0, 2.5);
+        shieldPath.lineTo(4.5, 5.5);
+        shieldPath.lineTo(4.5, 11.8);
+        shieldPath.cubicTo(4.5, 16.5, 7.7, 20.8, 12.0, 22.0);
+        shieldPath.cubicTo(16.3, 20.8, 19.5, 16.5, 19.5, 11.8);
+        shieldPath.lineTo(19.5, 5.5);
+        shieldPath.closeSubpath();
+        p.drawPath(shieldPath);
     } else {
-        // check / 默认：天蓝活动折线（参考图中的 cyan pulse）
-        p.setPen(strokePen(QColor(0x38, 0xBD, 0xF8), 2.4));
+        // check / 挂载等：天蓝脉冲
+        p.setPen(penOf(QColor(56, 189, 248), 2.4));
         p.setBrush(Qt::NoBrush);
-        QPainterPath path;
-        path.moveTo(3.5, 13.5);
-        path.lineTo(7.8, 13.5);
-        path.lineTo(11.2, 5.5);
-        path.lineTo(14.8, 19.5);
-        path.lineTo(17.5, 13.5);
-        path.lineTo(20.5, 13.5);
-        p.drawPath(path);
+        QPainterPath pulsePath;
+        pulsePath.moveTo(3.5, 13.5);
+        pulsePath.lineTo(7.5, 13.5);
+        pulsePath.lineTo(10.8, 6.0);
+        pulsePath.lineTo(14.2, 19.0);
+        pulsePath.lineTo(17.0, 13.5);
+        pulsePath.lineTo(20.5, 13.5);
+        p.drawPath(pulsePath);
     }
     return pm;
 }
@@ -333,10 +322,10 @@ QWidget *LogMonitorView::createRow(const QString &timestamp, const QString &type
     lay->addWidget(time, 0, Qt::AlignVCenter);
 
     auto *typeIcon = new QLabel;
-    typeIcon->setFixedSize(16, 16);
+    typeIcon->setFixedSize(18, 18);
     typeIcon->setAlignment(Qt::AlignCenter);
     typeIcon->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
-    typeIcon->setPixmap(makeTypeIcon(type, 16));
+    typeIcon->setPixmap(makeTypeIcon(type, 18));
     lay->addWidget(typeIcon, 0, Qt::AlignVCenter);
 
     auto *content = new QLabel(toRichMessage(message));
