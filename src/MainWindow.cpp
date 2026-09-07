@@ -221,30 +221,33 @@ QPushButton#Danger {
   color: #fecdd3;
   font-weight: 700;
 }
-QPushButton#Tab {
+QPushButton#Tab,
+QPushButton#TabActive,
+QPushButton#TabActiveCyan,
+QPushButton#TabActiveIndigo {
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   border-radius: 6px;
-  padding: 6px 14px;
+  padding: 5px 12px;
+  min-height: 28px;
   color: #94a3b8;
+  font-size: 12px;
+  font-weight: 600;
 }
 QPushButton#TabActive {
   background: rgba(16,185,129,0.2);
-  border: 1px solid rgba(16,185,129,0.4);
+  border: 1px solid rgba(16,185,129,0.45);
   color: #6ee7b7;
-  font-weight: 600;
 }
 QPushButton#TabActiveCyan {
   background: rgba(6,182,212,0.2);
-  border: 1px solid rgba(6,182,212,0.4);
+  border: 1px solid rgba(6,182,212,0.45);
   color: #67e8f9;
-  font-weight: 600;
 }
 QPushButton#TabActiveIndigo {
   background: rgba(99,102,241,0.2);
-  border: 1px solid rgba(99,102,241,0.4);
+  border: 1px solid rgba(99,102,241,0.45);
   color: #a5b4fc;
-  font-weight: 600;
 }
 QHeaderView::section {
   background: #0e1b2f;
@@ -308,6 +311,7 @@ QWidget#TabStrip {
   background: #0d182b;
   border: 1px solid #1d3153;
   border-radius: 8px;
+  min-height: 34px;
 }
 QPushButton#WinBtn {
   background: transparent;
@@ -412,14 +416,14 @@ void MainWindow::buildUi()
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // 顶栏（对齐参考图：图标 / 标题 / 版本 / UAC | 三页签 | 窗控）
+    // 顶栏：左品牌 | 居中页签 | 右窗控
     m_titleBar = new QWidget;
     m_titleBar->setObjectName(QStringLiteral("TitleBar"));
-    m_titleBar->setFixedHeight(44);
+    m_titleBar->setFixedHeight(48);
     m_titleBar->installEventFilter(this);
     auto *tb = new QHBoxLayout(m_titleBar);
-    tb->setContentsMargins(10, 6, 8, 6);
-    tb->setSpacing(8);
+    tb->setContentsMargins(10, 4, 6, 4);
+    tb->setSpacing(0);
 
     // 分享图标（资源 SVG）
     auto *appIcon = new QLabel;
@@ -443,15 +447,19 @@ void MainWindow::buildUi()
     m_uacBadge->setToolTip(QStringLiteral("点击可请求管理员权限（真实 Windows UAC）"));
     m_uacBadge->installEventFilter(this);
 
-    tb->addWidget(appIcon, 0, Qt::AlignVCenter);
-    tb->addWidget(appName, 0, Qt::AlignVCenter);
-    tb->addWidget(m_uacBadge, 0, Qt::AlignVCenter);
-    tb->addStretch(1);
+    auto *leftPanel = new QWidget;
+    auto *lp = new QHBoxLayout(leftPanel);
+    lp->setContentsMargins(0, 0, 0, 0);
+    lp->setSpacing(8);
+    lp->addWidget(appIcon, 0, Qt::AlignVCenter);
+    lp->addWidget(appName, 0, Qt::AlignVCenter);
+    lp->addWidget(m_uacBadge, 0, Qt::AlignVCenter);
+    lp->addStretch(1);
 
     auto *tabs = new QWidget;
     tabs->setObjectName(QStringLiteral("TabStrip"));
     auto *tabsLay = new QHBoxLayout(tabs);
-    tabsLay->setContentsMargins(4, 3, 4, 3);
+    tabsLay->setContentsMargins(4, 2, 4, 2);
     tabsLay->setSpacing(2);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
@@ -467,19 +475,19 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
+        b->setMinimumHeight(30);
     }
 
-    // 运行指示点挂在控制面板按钮右侧（叠在 tab strip 内）
     auto *managerWrap = new QWidget;
     auto *mw = new QHBoxLayout(managerWrap);
     mw->setContentsMargins(0, 0, 0, 0);
-    mw->setSpacing(0);
+    mw->setSpacing(4);
     mw->addWidget(m_tabManager);
     m_runDot = new QLabel;
     m_runDot->setObjectName(QStringLiteral("RunDot"));
     m_runDot->setVisible(false);
     mw->addWidget(m_runDot);
-    mw->addSpacing(8);
+    mw->addSpacing(4);
 
     auto *portalWrap = new QWidget;
     auto *pw = new QHBoxLayout(portalWrap);
@@ -491,18 +499,15 @@ void MainWindow::buildUi()
     m_portalCount->setAlignment(Qt::AlignCenter);
     m_portalCount->setFixedHeight(16);
     pw->addWidget(m_portalCount);
-    pw->addSpacing(6);
+    pw->addSpacing(4);
 
     tabsLay->addWidget(managerWrap);
     tabsLay->addWidget(portalWrap);
     tabsLay->addWidget(m_tabLogs);
-    tb->addWidget(tabs, 0, Qt::AlignVCenter);
 
     auto *minBtn = makeWinChromeBtn(m_titleBar, 0);
     auto *maxBtn = makeWinChromeBtn(m_titleBar, 1);
     auto *closeBtn = makeWinChromeBtn(m_titleBar, 2);
-
-    // 贴右、等高、零间距，贴近 Win11 标题栏窗控
     auto *chrome = new QWidget;
     chrome->setFixedHeight(32);
     auto *chromeLay = new QHBoxLayout(chrome);
@@ -511,8 +516,18 @@ void MainWindow::buildUi()
     chromeLay->addWidget(minBtn);
     chromeLay->addWidget(maxBtn);
     chromeLay->addWidget(closeBtn);
-    tb->addSpacing(8);
-    tb->addWidget(chrome, 0, Qt::AlignVCenter);
+
+    auto *rightPanel = new QWidget;
+    auto *rp = new QHBoxLayout(rightPanel);
+    rp->setContentsMargins(0, 0, 0, 0);
+    rp->setSpacing(0);
+    rp->addStretch(1);
+    rp->addWidget(chrome, 0, Qt::AlignVCenter);
+
+    // 左右等权拉伸 → 页签落在标题栏正中
+    tb->addWidget(leftPanel, 1);
+    tb->addWidget(tabs, 0, Qt::AlignVCenter);
+    tb->addWidget(rightPanel, 1);
     root->addWidget(m_titleBar);
 
     connect(m_tabManager, &QPushButton::clicked, this, [this] { switchView(0); });
