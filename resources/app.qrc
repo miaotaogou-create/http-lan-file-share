@@ -25,5 +25,12 @@
     <file>icons/external_link.svg</file>
     <file>icons/package_box_cyan.svg</file>
     <file>icons/package_box_glow.svg</file>
+    <file>icons/box_cardboard.svg</file>
+    <file>icons/file_zip.svg</file>
+    <file>icons/file_exe.svg</file>
+    <file>icons/file_document.svg</file>
+    <file>icons/terminal_cli.svg</file>
+    <file>icons/download_icon.svg</file>
+    <file>icons/trash_delete.svg</file>
   </qresource>
 </RCC>

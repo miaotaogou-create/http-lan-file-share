@@ -87,6 +87,26 @@ static QIcon loadSvgIcon(const QString &resPath, int size)
     return pm.isNull() ? QIcon() : QIcon(pm);
 }
 
+static QIcon fileTypeIcon(const QString &fileName)
+{
+    const QString ext = QFileInfo(fileName).suffix().toLower();
+    if (ext == QLatin1String("zip") || ext == QLatin1String("rar") || ext == QLatin1String("7z")
+        || ext == QLatin1String("tar") || ext == QLatin1String("gz") || ext == QLatin1String("tgz"))
+        return loadSvgIcon(QStringLiteral(":/icons/file_zip.svg"), 18);
+    if (ext == QLatin1String("exe") || ext == QLatin1String("msi") || ext == QLatin1String("bat")
+        || ext == QLatin1String("cmd") || ext == QLatin1String("dll"))
+        return loadSvgIcon(QStringLiteral(":/icons/file_exe.svg"), 18);
+    return loadSvgIcon(QStringLiteral(":/icons/file_document.svg"), 18);
+}
+
+static bool isArchiveName(const QString &fileName)
+{
+    const QString ext = QFileInfo(fileName).suffix().toLower();
+    return ext == QLatin1String("zip") || ext == QLatin1String("rar") || ext == QLatin1String("7z")
+        || ext == QLatin1String("tar") || ext == QLatin1String("gz") || ext == QLatin1String("tgz")
+        || fileName.contains(QStringLiteral("bundle"), Qt::CaseInsensitive);
+}
+
 static QIcon makeWinChromeIcon(int kind)
 {
     // 0 最小化  1 最大化  2 关闭  3 还原
@@ -493,6 +513,49 @@ QPushButton#BrowseFolderBtn {
 QPushButton#BrowseFolderBtn:hover {
   background: #182b46;
   border-color: #38bdf8;
+}
+QPushButton#FileActCli {
+  background: #0c1c2e;
+  border: 1px solid #1e3a5f;
+  border-radius: 4px;
+  padding: 0;
+  min-width: 30px;
+  max-width: 30px;
+  min-height: 26px;
+  max-height: 26px;
+}
+QPushButton#FileActCli:hover {
+  background: #162f4d;
+  border-color: #38bdf8;
+}
+QPushButton#FileActDl {
+  background: #064e3b;
+  border: 1px solid #059669;
+  border-radius: 4px;
+  color: #34d399;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0 8px;
+  min-height: 26px;
+  max-height: 26px;
+}
+QPushButton#FileActDl:hover {
+  background: #047857;
+  border-color: #10b981;
+  color: #a7f3d0;
+}
+QPushButton#FileActDel {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 0;
+  min-width: 26px;
+  max-width: 26px;
+  min-height: 26px;
+  max-height: 26px;
+}
+QPushButton#FileActDel:hover {
+  background: rgba(239, 68, 68, 0.15);
 }
 QLineEdit#FolderPathEdit {
   font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
@@ -1057,9 +1120,24 @@ void MainWindow::buildUi()
     pkgHead->addStretch(1);
     pkgHead->addWidget(readyBadge, 0, Qt::AlignVCenter);
     qrLay->addLayout(pkgHead);
+
+    auto *priorityBox = new QFrame;
+    priorityBox->setStyleSheet(QStringLiteral(
+        "QFrame{background:#070d18;border:1px solid #1f324f;border-radius:8px;}"));
+    auto *priorityLay = new QHBoxLayout(priorityBox);
+    priorityLay->setContentsMargins(10, 10, 10, 10);
+    priorityLay->setSpacing(10);
+    auto *priorityIcon = new QLabel;
+    priorityIcon->setObjectName(QStringLiteral("PriorityIcon"));
+    priorityIcon->setFixedSize(22, 22);
+    priorityIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/box_cardboard.svg"), 22));
     m_priorityFileLabel = new QLabel(QStringLiteral("暂无打包产物"));
-    m_priorityFileLabel->setStyleSheet(QStringLiteral("background:#070d18;border:1px solid #1f324f;border-radius:8px;padding:10px;"));
-    qrLay->addWidget(m_priorityFileLabel);
+    m_priorityFileLabel->setStyleSheet(QStringLiteral(
+        "color:#e2e8f0;font-size:12px;font-family:Consolas,\"Cascadia Mono\",monospace;background:transparent;"));
+    m_priorityFileLabel->setWordWrap(true);
+    priorityLay->addWidget(priorityIcon, 0, Qt::AlignVCenter);
+    priorityLay->addWidget(m_priorityFileLabel, 1, Qt::AlignVCenter);
+    qrLay->addWidget(priorityBox);
 
     topRow->addWidget(httpCard, 7);
     topRow->addWidget(qrCard, 5);
@@ -1097,8 +1175,11 @@ void MainWindow::buildUi()
     m_fileTable->setHorizontalHeaderLabels(
         {QStringLiteral("文件名与产物"), QStringLiteral("文件大小"), QStringLiteral("修改时间"),
          QStringLiteral("类型"), QStringLiteral("快捷操作")});
-    m_fileTable->horizontalHeader()->setStretchLastSection(true);
+    m_fileTable->horizontalHeader()->setStretchLastSection(false);
     m_fileTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_fileTable->horizontalHeader()->setSectionResizeMode(4, QHeaderView::Fixed);
+    m_fileTable->setColumnWidth(4, 168);
+    m_fileTable->setIconSize(QSize(18, 18));
     m_fileTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_fileTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_fileTable->verticalHeader()->setVisible(false);
@@ -1106,16 +1187,6 @@ void MainWindow::buildUi()
     m_fileTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_fileTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     fileLay->addWidget(m_fileTable);
-
-    auto *fileActs = new QHBoxLayout;
-    auto *dlBtn = new QPushButton(QStringLiteral("下载选中"));
-    auto *curlBtn = new QPushButton(QStringLiteral("复制 curl"));
-    auto *delBtn = new QPushButton(QStringLiteral("删除选中"));
-    fileActs->addStretch();
-    fileActs->addWidget(curlBtn);
-    fileActs->addWidget(dlBtn);
-    fileActs->addWidget(delBtn);
-    fileLay->addLayout(fileActs);
     mv->addWidget(fileCard);
 
     // 网卡卡
@@ -1194,6 +1265,7 @@ void MainWindow::buildUi()
     pl->addWidget(ph);
     pl->addWidget(m_portalHostLabel);
     m_portalTable = new QTableWidget(0, 3);
+    m_portalTable->setIconSize(QSize(18, 18));
     m_portalTable->setHorizontalHeaderLabels(
         {QStringLiteral("文件名"), QStringLiteral("大小"), QStringLiteral("修改时间")});
     m_portalTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -1253,9 +1325,6 @@ void MainWindow::buildUi()
     connect(openReal, &QPushButton::clicked, this, &MainWindow::openPortalInBrowser);
     connect(selfCheckBtn, &QPushButton::clicked, this, &MainWindow::selfCheck);
     connect(uploadBtn, &QPushButton::clicked, this, &MainWindow::uploadLocalFiles);
-    connect(dlBtn, &QPushButton::clicked, this, &MainWindow::downloadSelectedFile);
-    connect(delBtn, &QPushButton::clicked, this, &MainWindow::deleteSelectedFile);
-    connect(curlBtn, &QPushButton::clicked, this, &MainWindow::copyCurlForSelected);
     connect(addNicBtn, &QPushButton::clicked, this, &MainWindow::addNicIp);
     connect(refreshNicBtn, &QPushButton::clicked, this, &MainWindow::refreshNics);
     connect(clearLogBtn, &QPushButton::clicked, this, &MainWindow::clearLogs);
@@ -1649,32 +1718,80 @@ void MainWindow::refreshFiles()
         total += fi.size();
         const int r = m_fileTable->rowCount();
         m_fileTable->insertRow(r);
-        m_fileTable->setItem(r, 0, new QTableWidgetItem(fi.fileName()));
+
+        auto *nameItem = new QTableWidgetItem(fi.fileName());
+        nameItem->setIcon(fileTypeIcon(fi.fileName()));
+        nameItem->setData(Qt::UserRole, fi.absoluteFilePath());
+        m_fileTable->setItem(r, 0, nameItem);
         m_fileTable->setItem(r, 1, new QTableWidgetItem(fmtBytes(fi.size())));
         m_fileTable->setItem(r, 2, new QTableWidgetItem(fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
         m_fileTable->setItem(r, 3, new QTableWidgetItem(fi.suffix().toUpper()));
-        m_fileTable->setItem(r, 4, new QTableWidgetItem(QStringLiteral("下载 / curl / 删除")));
-        m_fileTable->item(r, 0)->setData(Qt::UserRole, fi.absoluteFilePath());
+        m_fileTable->setCellWidget(r, 4, makeFileActionBar(fi.absoluteFilePath(), fi.fileName()));
+        m_fileTable->setRowHeight(r, 38);
 
         const int pr = m_portalTable->rowCount();
         m_portalTable->insertRow(pr);
-        m_portalTable->setItem(pr, 0, new QTableWidgetItem(fi.fileName()));
+        auto *portalName = new QTableWidgetItem(fi.fileName());
+        portalName->setIcon(fileTypeIcon(fi.fileName()));
+        m_portalTable->setItem(pr, 0, portalName);
         m_portalTable->setItem(pr, 1, new QTableWidgetItem(fmtBytes(fi.size())));
         m_portalTable->setItem(pr, 2, new QTableWidgetItem(fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
 
-        if (priority.isEmpty()
-            || fi.fileName().contains(QStringLiteral("bundle"), Qt::CaseInsensitive)
-            || fi.suffix().compare(QStringLiteral("zip"), Qt::CaseInsensitive) == 0
-            || fi.suffix().compare(QStringLiteral("gz"), Qt::CaseInsensitive) == 0)
+        if (priority.isEmpty() || isArchiveName(fi.fileName()))
             priority = QStringLiteral("%1  (%2)").arg(fi.fileName(), fmtBytes(fi.size()));
         ++shown;
     }
 
     m_fileStats->setText(QStringLiteral("%1 个文件 · %2").arg(shown).arg(fmtBytes(total)));
     m_priorityFileLabel->setText(priority.isEmpty() ? QStringLiteral("暂无打包产物") : priority);
+    if (auto *icon = m_priorityFileLabel->parentWidget()
+                         ? m_priorityFileLabel->parentWidget()->findChild<QLabel *>(QStringLiteral("PriorityIcon"))
+                         : nullptr) {
+        icon->setPixmap(loadSvgPixmap(priority.isEmpty() ? QStringLiteral(":/icons/package_box_cyan.svg")
+                                                         : QStringLiteral(":/icons/box_cardboard.svg"),
+                                      22));
+    }
     if (m_portalCount)
         m_portalCount->setText(QString::number(shown));
     fitTableHeight(m_fileTable);
+}
+
+QWidget *MainWindow::makeFileActionBar(const QString &path, const QString &name)
+{
+    auto *bar = new QWidget;
+    auto *lay = new QHBoxLayout(bar);
+    lay->setContentsMargins(4, 2, 4, 2);
+    lay->setSpacing(6);
+
+    auto *cliBtn = new QPushButton;
+    cliBtn->setObjectName(QStringLiteral("FileActCli"));
+    cliBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/terminal_cli.svg"), 14));
+    cliBtn->setIconSize(QSize(14, 14));
+    cliBtn->setCursor(Qt::PointingHandCursor);
+    cliBtn->setToolTip(QStringLiteral("复制 curl 下载命令"));
+
+    auto *dlBtn = new QPushButton(QStringLiteral("下载"));
+    dlBtn->setObjectName(QStringLiteral("FileActDl"));
+    dlBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/download_icon.svg"), 14));
+    dlBtn->setIconSize(QSize(14, 14));
+    dlBtn->setCursor(Qt::PointingHandCursor);
+
+    auto *delBtn = new QPushButton;
+    delBtn->setObjectName(QStringLiteral("FileActDel"));
+    delBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/trash_delete.svg"), 14));
+    delBtn->setIconSize(QSize(14, 14));
+    delBtn->setCursor(Qt::PointingHandCursor);
+    delBtn->setToolTip(QStringLiteral("从共享列表移除"));
+
+    lay->addWidget(cliBtn);
+    lay->addWidget(dlBtn);
+    lay->addWidget(delBtn);
+    lay->addStretch(1);
+
+    connect(cliBtn, &QPushButton::clicked, this, [this, name] { copyCurlForName(name); });
+    connect(dlBtn, &QPushButton::clicked, this, [this, path, name] { downloadFileByPath(path, name); });
+    connect(delBtn, &QPushButton::clicked, this, [this, path, name] { deleteFileByPath(path, name); });
+    return bar;
 }
 
 void MainWindow::uploadLocalFiles()
@@ -1704,8 +1821,14 @@ void MainWindow::downloadSelectedFile()
     if (items.isEmpty())
         return;
     const int r = items.first()->row();
-    const QString src = m_fileTable->item(r, 0)->data(Qt::UserRole).toString();
-    const QString name = m_fileTable->item(r, 0)->text();
+    downloadFileByPath(m_fileTable->item(r, 0)->data(Qt::UserRole).toString(),
+                       m_fileTable->item(r, 0)->text());
+}
+
+void MainWindow::downloadFileByPath(const QString &src, const QString &name)
+{
+    if (src.isEmpty())
+        return;
     const QString dest = QFileDialog::getSaveFileName(this, QStringLiteral("保存文件"), name);
     if (dest.isEmpty())
         return;
@@ -1723,8 +1846,14 @@ void MainWindow::deleteSelectedFile()
     if (items.isEmpty())
         return;
     const int r = items.first()->row();
-    const QString path = m_fileTable->item(r, 0)->data(Qt::UserRole).toString();
-    const QString name = m_fileTable->item(r, 0)->text();
+    deleteFileByPath(m_fileTable->item(r, 0)->data(Qt::UserRole).toString(),
+                     m_fileTable->item(r, 0)->text());
+}
+
+void MainWindow::deleteFileByPath(const QString &path, const QString &name)
+{
+    if (path.isEmpty())
+        return;
     if (QMessageBox::question(this, QStringLiteral("确认"),
                               QStringLiteral("确定从共享文件夹移除 %1 吗？").arg(name))
         != QMessageBox::Yes)
@@ -1740,7 +1869,11 @@ void MainWindow::copyCurlForSelected()
     const auto items = m_fileTable->selectedItems();
     if (items.isEmpty())
         return;
-    const QString name = m_fileTable->item(items.first()->row(), 0)->text();
+    copyCurlForName(m_fileTable->item(items.first()->row(), 0)->text());
+}
+
+void MainWindow::copyCurlForName(const QString &name)
+{
     const QString cmd = QStringLiteral("curl -O \"%1/download/%2\"")
                             .arg(currentShareUrl(), QString::fromUtf8(QUrl::toPercentEncoding(name)));
     QApplication::clipboard()->setText(cmd);

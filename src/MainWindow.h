@@ -44,6 +44,9 @@ private slots:
     void downloadSelectedFile();
     void deleteSelectedFile();
     void copyCurlForSelected();
+    void downloadFileByPath(const QString &src, const QString &name);
+    void deleteFileByPath(const QString &path, const QString &name);
+    void copyCurlForName(const QString &name);
     void clearLogs();
     void onServerStarted(quint16 port);
     void onServerStopped();
@@ -62,6 +65,7 @@ private:
     void updateUacBadge();
     void updateMaxButtonIcon();
     void fitTableHeight(QTableWidget *table);
+    QWidget *makeFileActionBar(const QString &path, const QString &name);
     QString currentShareUrl() const;
     QString selectedIp() const;
     QString adapterNameForIp(const QString &ip) const;
