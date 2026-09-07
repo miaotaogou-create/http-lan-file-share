@@ -1,6 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
-  <!-- 页签用：currentColor 由 makeTabIcon 替换；路径为标准心跳脉冲折线 -->
-  <path d="M 3.5 13.5 H 7.8 L 11.2 5.5 L 14.8 19.5 L 17.5 13.5 H 20.5"
+  <path d="M3.5 13.5H7.8L11.2 5.5L14.8 19.5L17.5 13.5H20.5"
         stroke="currentColor"
         stroke-width="2.6"
         stroke-linecap="round"

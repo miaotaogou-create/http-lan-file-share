@@ -5,6 +5,7 @@
 #include <QIcon>
 #include <QLabel>
 #include <QPainter>
+#include <QPainterPath>
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollArea>
@@ -23,6 +24,29 @@ QPixmap loadSvgPm(const QString &path, int size)
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     renderer.render(&p, QRectF(0, 0, size, size));
+    return pm;
+}
+
+// 心跳脉冲图标：不依赖 SVG 编码，避免资源解析失败时标题左侧空白
+QPixmap makePulsePixmap(int size)
+{
+    QPixmap pm(size, size);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    const qreal s = size / 24.0;
+    p.scale(s, s);
+    QPen pen(QColor(0x81, 0x8C, 0xF8), 2.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    p.setPen(pen);
+    p.setBrush(Qt::NoBrush);
+    QPainterPath path;
+    path.moveTo(3.5, 13.5);
+    path.lineTo(7.8, 13.5);
+    path.lineTo(11.2, 5.5);
+    path.lineTo(14.8, 19.5);
+    path.lineTo(17.5, 13.5);
+    path.lineTo(20.5, 13.5);
+    p.drawPath(path);
     return pm;
 }
 
@@ -166,7 +190,9 @@ QWidget *LogMonitorView::createHeader()
 
     auto *pulse = new QLabel;
     pulse->setFixedSize(18, 18);
-    pulse->setPixmap(loadSvgPm(QStringLiteral(":/icons/activity_pulse_purple.svg"), 18));
+    pulse->setAlignment(Qt::AlignCenter);
+    pulse->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
+    pulse->setPixmap(makePulsePixmap(18));
     lay->addWidget(pulse, 0, Qt::AlignVCenter);
 
     auto *title = new QLabel(QStringLiteral("HTTP 传输活动日志与连接监控"));
