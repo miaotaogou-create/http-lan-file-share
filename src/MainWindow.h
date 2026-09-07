@@ -84,6 +84,7 @@ private:
     QSpinBox *m_portSpin = nullptr;
     QComboBox *m_ipCombo = nullptr;
     QLabel *m_urlLabel = nullptr;
+    QLabel *m_loopbackLabel = nullptr;
     QrCodeWidget *m_qr = nullptr;
     QLabel *m_qrUrlLabel = nullptr;
     QLabel *m_priorityFileLabel = nullptr;

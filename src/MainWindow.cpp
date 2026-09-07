@@ -5,6 +5,7 @@
 #include "ActivityLogModel.h"
 #include "QrCodeWidget.h"
 
+#include <QAbstractItemView>
 #include <QApplication>
 #include <QClipboard>
 #include <QCoreApplication>
@@ -194,7 +195,14 @@ QFrame#Card {
   border: 1px solid #1b2b46;
   border-radius: 12px;
 }
-QLineEdit, QSpinBox, QComboBox {
+QComboBox {
+  background: #070d18;
+  border: 1px solid #1f324f;
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: #e2e8f0;
+}
+QLineEdit, QSpinBox {
   background: #070d18;
   border: 1px solid #1f324f;
   border-radius: 8px;
@@ -274,6 +282,100 @@ QPushButton#BackPortalBtn:hover {
 QPushButton#BackPortalBtn:pressed {
   background: #083344;
   border: 2px solid #22d3ee;
+}
+QLabel#SectionCyan {
+  color: #22d3ee;
+  font-size: 12px;
+  font-weight: 600;
+}
+QComboBox#IpCombo {
+  background: #0e1b2f;
+  border: 1px solid #22d3ee;
+  border-radius: 6px;
+  padding: 4px 28px 4px 10px;
+  color: #f1f5f9;
+  font-size: 12px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  min-height: 26px;
+}
+QComboBox#IpCombo:hover {
+  border: 1px solid #67e8f9;
+}
+QComboBox#IpCombo::drop-down {
+  subcontrol-origin: padding;
+  subcontrol-position: top right;
+  width: 24px;
+  border: none;
+  background: transparent;
+}
+QComboBox#IpCombo::down-arrow {
+  image: none;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid #e2e8f0;
+  width: 0;
+  height: 0;
+  margin-right: 8px;
+}
+QComboBox#IpCombo QAbstractItemView {
+  background: #0b1424;
+  border: 1px solid #94a3b8;
+  outline: 0;
+  selection-background-color: #2563eb;
+  selection-color: #ffffff;
+  color: #e2e8f0;
+}
+QComboBox#IpCombo QAbstractItemView::item {
+  min-height: 28px;
+  padding: 4px 10px;
+}
+QComboBox#IpCombo QAbstractItemView::item:selected {
+  background: #2563eb;
+  color: #ffffff;
+}
+QPushButton#GhostCyan {
+  background: #11243b;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 6px;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  min-height: 28px;
+}
+QPushButton#GhostCyan:hover {
+  background: #163050;
+  border: 1px solid #22d3ee;
+}
+QPushButton#GhostCyanIcon {
+  background: #11243b;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 6px;
+  color: #67e8f9;
+  padding: 0;
+  min-width: 32px;
+  max-width: 32px;
+  min-height: 32px;
+  max-height: 32px;
+}
+QPushButton#GhostCyanIcon:hover {
+  background: #163050;
+  border: 1px solid #22d3ee;
+}
+QPushButton#SelfCheckBtn {
+  background: transparent;
+  border: 1px solid #22d3ee;
+  border-radius: 6px;
+  color: #22d3ee;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  min-height: 28px;
+}
+QPushButton#SelfCheckBtn:hover {
+  background: rgba(34, 211, 238, 0.10);
+  border: 1px solid #67e8f9;
+  color: #67e8f9;
 }
 QTableWidget {
   background: #070e1b;
@@ -425,6 +527,62 @@ static QIcon makeBackArrowIcon(const QColor &color)
     p.drawLine(QPointF(12.5, 8), QPointF(4.5, 8));
     p.drawLine(QPointF(7.5, 4.5), QPointF(4.2, 8));
     p.drawLine(QPointF(7.5, 11.5), QPointF(4.2, 8));
+    return QIcon(pm);
+}
+
+static QIcon makeWifiIcon(const QColor &color)
+{
+    QPixmap pm(18, 18);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setBrush(Qt::NoBrush);
+    // 简易 WiFi 弧
+    p.drawArc(QRectF(2, 5, 14, 14), 40 * 16, 100 * 16);
+    p.drawArc(QRectF(4.5, 7.5, 9, 9), 40 * 16, 100 * 16);
+    p.setBrush(color);
+    p.setPen(Qt::NoPen);
+    p.drawEllipse(QPointF(9, 14.5), 1.6, 1.6);
+    return QIcon(pm);
+}
+
+static QIcon makePulseIcon(const QColor &color)
+{
+    QPixmap pm(16, 16);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.drawPolyline(QPolygonF({QPointF(1, 9), QPointF(4, 9), QPointF(6, 3.5), QPointF(8.5, 13),
+                              QPointF(11, 7), QPointF(13, 9), QPointF(15, 9)}));
+    return QIcon(pm);
+}
+
+static QIcon makeCopyIcon(const QColor &color)
+{
+    QPixmap pm(14, 14);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.4));
+    p.setBrush(Qt::NoBrush);
+    p.drawRoundedRect(QRectF(4, 3, 7.5, 9), 1.2, 1.2);
+    p.drawRoundedRect(QRectF(2, 1.5, 7.5, 9), 1.2, 1.2);
+    return QIcon(pm);
+}
+
+static QIcon makeExternalIcon(const QColor &color)
+{
+    QPixmap pm(14, 14);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.drawRoundedRect(QRectF(2, 4, 8, 8), 1.2, 1.2);
+    p.drawLine(QPointF(7.5, 6.5), QPointF(11.5, 2.5));
+    p.drawLine(QPointF(8.5, 2.5), QPointF(11.5, 2.5));
+    p.drawLine(QPointF(11.5, 2.5), QPointF(11.5, 5.5));
     return QIcon(pm);
 }
 
@@ -628,26 +786,74 @@ void MainWindow::buildUi()
     portRow->addStretch();
     httpLay->addLayout(portRow);
 
-    httpLay->addWidget(new QLabel(QStringLiteral("局域网直连提货地址")));
+    auto *shareTitle = new QLabel(QStringLiteral("局域网直连提货地址"));
+    shareTitle->setObjectName(QStringLiteral("SectionCyan"));
+    httpLay->addWidget(shareTitle);
+
     auto *urlBox = makeCard(httpCard);
     urlBox->setStyleSheet(QStringLiteral("QFrame#Card{background:#070d18;border:1px solid #1f324f;border-radius:8px;}"));
     auto *urlLay = new QHBoxLayout(urlBox);
+    urlLay->setContentsMargins(12, 10, 12, 10);
+    urlLay->setSpacing(12);
+
+    auto *wifiBadge = new QLabel;
+    wifiBadge->setFixedSize(36, 36);
+    wifiBadge->setAlignment(Qt::AlignCenter);
+    wifiBadge->setStyleSheet(QStringLiteral(
+        "background:#083344;border:1px solid rgba(34,211,238,0.35);border-radius:8px;"));
+    wifiBadge->setPixmap(makeWifiIcon(QColor(QStringLiteral("#22d3ee"))).pixmap(18, 18));
+
     m_ipCombo = new QComboBox;
+    m_ipCombo->setObjectName(QStringLiteral("IpCombo"));
+    m_ipCombo->setMinimumWidth(260);
+    m_ipCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
+    // 下拉列表选中条铺满行宽
+    m_ipCombo->view()->setTextElideMode(Qt::ElideNone);
+    m_ipCombo->setMaxVisibleItems(10);
+
     m_urlLabel = new QLabel(QStringLiteral("— (服务未启动)"));
     m_urlLabel->setObjectName(QStringLiteral("Url"));
-    auto *copyBtn = new QPushButton(QStringLiteral("复制地址"));
-    auto *openBtn = new QPushButton(QStringLiteral("打开"));
+
+    auto *ipRow = new QHBoxLayout;
+    ipRow->setSpacing(8);
+    auto *ipHint = new QLabel(QStringLiteral("局域网首选 IP:"));
+    ipHint->setStyleSheet(QStringLiteral("color:#94a3b8;background:transparent;"));
+    ipRow->addWidget(ipHint);
+    ipRow->addWidget(m_ipCombo, 1);
+
     auto *leftUrl = new QVBoxLayout;
-    leftUrl->addWidget(m_ipCombo);
+    leftUrl->setSpacing(6);
+    leftUrl->addLayout(ipRow);
     leftUrl->addWidget(m_urlLabel);
+
+    auto *copyBtn = new QPushButton(QStringLiteral("复制地址"));
+    copyBtn->setObjectName(QStringLiteral("GhostCyan"));
+    copyBtn->setIcon(makeCopyIcon(QColor(QStringLiteral("#67e8f9"))));
+    copyBtn->setIconSize(QSize(14, 14));
+    copyBtn->setCursor(Qt::PointingHandCursor);
+
+    auto *openBtn = new QPushButton;
+    openBtn->setObjectName(QStringLiteral("GhostCyanIcon"));
+    openBtn->setIcon(makeExternalIcon(QColor(QStringLiteral("#67e8f9"))));
+    openBtn->setIconSize(QSize(14, 14));
+    openBtn->setToolTip(QStringLiteral("在浏览器打开提货页"));
+    openBtn->setCursor(Qt::PointingHandCursor);
+
+    urlLay->addWidget(wifiBadge, 0, Qt::AlignVCenter);
     urlLay->addLayout(leftUrl, 1);
-    urlLay->addWidget(copyBtn);
-    urlLay->addWidget(openBtn);
+    urlLay->addWidget(copyBtn, 0, Qt::AlignVCenter);
+    urlLay->addWidget(openBtn, 0, Qt::AlignVCenter);
     httpLay->addWidget(urlBox);
 
     auto *loopRow = new QHBoxLayout;
-    loopRow->addWidget(new QLabel(QStringLiteral("本机 Loopback: http://127.0.0.1:") + QString::number(m_portSpin->value())));
+    m_loopbackLabel = new QLabel(QStringLiteral("本机 Loopback: http://127.0.0.1:8899"));
+    m_loopbackLabel->setObjectName(QStringLiteral("Muted"));
     auto *selfCheckBtn = new QPushButton(QStringLiteral("执行自检 (Self-check)"));
+    selfCheckBtn->setObjectName(QStringLiteral("SelfCheckBtn"));
+    selfCheckBtn->setIcon(makePulseIcon(QColor(QStringLiteral("#22d3ee"))));
+    selfCheckBtn->setIconSize(QSize(14, 14));
+    selfCheckBtn->setCursor(Qt::PointingHandCursor);
+    loopRow->addWidget(m_loopbackLabel);
     loopRow->addStretch();
     loopRow->addWidget(selfCheckBtn);
     httpLay->addLayout(loopRow);
@@ -936,6 +1142,9 @@ QString MainWindow::currentShareUrl() const
 
 void MainWindow::updateShareUrlUi()
 {
+    if (m_loopbackLabel)
+        m_loopbackLabel->setText(QStringLiteral("本机 Loopback: http://127.0.0.1:%1").arg(m_portSpin->value()));
+
     if (m_running) {
         const QString url = currentShareUrl();
         m_urlLabel->setText(url);
