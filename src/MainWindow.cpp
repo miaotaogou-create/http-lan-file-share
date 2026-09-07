@@ -638,23 +638,6 @@ static QIcon makeBackArrowIcon(const QColor &color)
     return QIcon(pm);
 }
 
-static QIcon makeWifiIcon(const QColor &color)
-{
-    QPixmap pm(18, 18);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing, true);
-    p.setPen(QPen(color, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    p.setBrush(Qt::NoBrush);
-    // 简易 WiFi 弧
-    p.drawArc(QRectF(2, 5, 14, 14), 40 * 16, 100 * 16);
-    p.drawArc(QRectF(4.5, 7.5, 9, 9), 40 * 16, 100 * 16);
-    p.setBrush(color);
-    p.setPen(Qt::NoPen);
-    p.drawEllipse(QPointF(9, 14.5), 1.6, 1.6);
-    return QIcon(pm);
-}
-
 static QIcon makePulseIcon(const QColor &color)
 {
     QPixmap pm(16, 16);
@@ -664,33 +647,6 @@ static QIcon makePulseIcon(const QColor &color)
     p.setPen(QPen(color, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.drawPolyline(QPolygonF({QPointF(1, 9), QPointF(4, 9), QPointF(6, 3.5), QPointF(8.5, 13),
                               QPointF(11, 7), QPointF(13, 9), QPointF(15, 9)}));
-    return QIcon(pm);
-}
-
-static QIcon makeCopyIcon(const QColor &color)
-{
-    QPixmap pm(14, 14);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing, true);
-    p.setPen(QPen(color, 1.4));
-    p.setBrush(Qt::NoBrush);
-    p.drawRoundedRect(QRectF(4, 3, 7.5, 9), 1.2, 1.2);
-    p.drawRoundedRect(QRectF(2, 1.5, 7.5, 9), 1.2, 1.2);
-    return QIcon(pm);
-}
-
-static QIcon makeExternalIcon(const QColor &color)
-{
-    QPixmap pm(14, 14);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing, true);
-    p.setPen(QPen(color, 1.4, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
-    p.drawRoundedRect(QRectF(2, 4, 8, 8), 1.2, 1.2);
-    p.drawLine(QPointF(7.5, 6.5), QPointF(11.5, 2.5));
-    p.drawLine(QPointF(8.5, 2.5), QPointF(11.5, 2.5));
-    p.drawLine(QPointF(11.5, 2.5), QPointF(11.5, 5.5));
     return QIcon(pm);
 }
 
@@ -941,9 +897,17 @@ void MainWindow::buildUi()
     portRow->addStretch();
     httpLay->addLayout(portRow);
 
+    auto *shareTitleRow = new QHBoxLayout;
+    shareTitleRow->setSpacing(6);
+    auto *shareTitleIcon = new QLabel;
+    shareTitleIcon->setFixedSize(14, 14);
+    shareTitleIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/wifi_lan.svg"), 14).pixmap(14, 14));
     auto *shareTitle = new QLabel(QStringLiteral("局域网直连提货地址"));
     shareTitle->setObjectName(QStringLiteral("SectionCyan"));
-    httpLay->addWidget(shareTitle);
+    shareTitleRow->addWidget(shareTitleIcon, 0, Qt::AlignVCenter);
+    shareTitleRow->addWidget(shareTitle, 0, Qt::AlignVCenter);
+    shareTitleRow->addStretch(1);
+    httpLay->addLayout(shareTitleRow);
 
     auto *urlBox = makeCard(httpCard);
     urlBox->setStyleSheet(QStringLiteral("QFrame#Card{background:#070d18;border:1px solid #1f324f;border-radius:8px;}"));
@@ -952,11 +916,10 @@ void MainWindow::buildUi()
     urlLay->setSpacing(12);
 
     auto *wifiBadge = new QLabel;
-    wifiBadge->setFixedSize(36, 36);
+    wifiBadge->setFixedSize(32, 32);
     wifiBadge->setAlignment(Qt::AlignCenter);
-    wifiBadge->setStyleSheet(QStringLiteral(
-        "background:#083344;border:1px solid rgba(34,211,238,0.35);border-radius:8px;"));
-    wifiBadge->setPixmap(makeWifiIcon(QColor(QStringLiteral("#22d3ee"))).pixmap(18, 18));
+    wifiBadge->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
+    wifiBadge->setPixmap(loadSvgIcon(QStringLiteral(":/icons/wifi_lan_box.svg"), 32).pixmap(32, 32));
 
     m_ipCombo = new QComboBox;
     m_ipCombo->setObjectName(QStringLiteral("IpCombo"));
@@ -983,13 +946,13 @@ void MainWindow::buildUi()
 
     auto *copyBtn = new QPushButton(QStringLiteral("复制地址"));
     copyBtn->setObjectName(QStringLiteral("GhostCyan"));
-    copyBtn->setIcon(makeCopyIcon(QColor(QStringLiteral("#67e8f9"))));
+    copyBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/copy_clipboard.svg"), 14));
     copyBtn->setIconSize(QSize(14, 14));
     copyBtn->setCursor(Qt::PointingHandCursor);
 
     auto *openBtn = new QPushButton;
     openBtn->setObjectName(QStringLiteral("GhostCyanIcon"));
-    openBtn->setIcon(makeExternalIcon(QColor(QStringLiteral("#67e8f9"))));
+    openBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/external_link.svg"), 14));
     openBtn->setIconSize(QSize(14, 14));
     openBtn->setToolTip(QStringLiteral("在浏览器打开提货页"));
     openBtn->setCursor(Qt::PointingHandCursor);
