@@ -588,6 +588,20 @@ QLabel#PriorityEmpty {
   border-radius: 8px;
   padding: 14px;
 }
+QLabel#FileStatsPill {
+  background: #13233c;
+  border: 1px solid #1f375c;
+  border-radius: 10px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+QLabel#FilePathHint {
+  color: #94a3b8;
+  font-size: 11px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  background: transparent;
+}
 QLineEdit#FolderPathEdit {
   font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
   font-size: 12px;
@@ -1224,17 +1238,51 @@ void MainWindow::buildUi()
     auto *fileCard = makeCard(managerPage);
     auto *fileLay = new QVBoxLayout(fileCard);
     fileLay->setContentsMargins(16, 16, 16, 16);
+    fileLay->setSpacing(12);
+
     auto *fileHead = new QHBoxLayout;
+    fileHead->setSpacing(10);
+
+    auto *fileFolderIcon = new QLabel;
+    fileFolderIcon->setFixedSize(32, 32);
+    fileFolderIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/folder_open_box.svg"), 32));
+
+    auto *fileTitleCol = new QWidget;
+    auto *fileTitleLay = new QVBoxLayout(fileTitleCol);
+    fileTitleLay->setContentsMargins(0, 0, 0, 0);
+    fileTitleLay->setSpacing(2);
+
+    auto *fileTitleRow = new QHBoxLayout;
+    fileTitleRow->setSpacing(8);
     auto *fileTitle = new QLabel(QStringLiteral("共享文件夹内容与快速传输"));
-    fileTitle->setObjectName(QStringLiteral("Title"));
+    fileTitle->setStyleSheet(QStringLiteral(
+        "color:#f1f5f9;font-size:13px;font-weight:700;background:transparent;"));
     m_fileStats = new QLabel;
-    m_fileStats->setObjectName(QStringLiteral("Badge"));
+    m_fileStats->setObjectName(QStringLiteral("FileStatsPill"));
+    m_fileStats->setTextFormat(Qt::RichText);
+    m_fileStats->setText(QStringLiteral("<span style='color:#00d2ff'>0</span>"
+                                        "<span style='color:#7dd3fc'> 个文件</span>"
+                                        "<span style='color:#7dd3fc'> · </span>"
+                                        "<span style='color:#00d2ff'>0 B</span>"));
+    fileTitleRow->addWidget(fileTitle, 0, Qt::AlignVCenter);
+    fileTitleRow->addWidget(m_fileStats, 0, Qt::AlignVCenter);
+    fileTitleRow->addStretch(1);
+
+    m_filePathLabel = new QLabel;
+    m_filePathLabel->setObjectName(QStringLiteral("FilePathHint"));
+    m_filePathLabel->setText(QStringLiteral("当前路径: %1").arg(m_shareRoot));
+    m_filePathLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+    fileTitleLay->addLayout(fileTitleRow);
+    fileTitleLay->addWidget(m_filePathLabel);
+
     auto *uploadBtn = new QPushButton(QStringLiteral("上传文件到共享目录"));
     uploadBtn->setObjectName(QStringLiteral("Primary"));
-    fileHead->addWidget(fileTitle);
-    fileHead->addWidget(m_fileStats);
-    fileHead->addStretch();
-    fileHead->addWidget(uploadBtn);
+    uploadBtn->setCursor(Qt::PointingHandCursor);
+
+    fileHead->addWidget(fileFolderIcon, 0, Qt::AlignTop);
+    fileHead->addWidget(fileTitleCol, 1, Qt::AlignVCenter);
+    fileHead->addWidget(uploadBtn, 0, Qt::AlignTop);
     fileLay->addLayout(fileHead);
 
     auto *dropHint = new QLabel(QStringLiteral("支持局域网千兆互传：使用上方按钮选择文件加入 HTTP 共享目录"));
@@ -1824,7 +1872,15 @@ void MainWindow::refreshFiles()
         ++shown;
     }
 
-    m_fileStats->setText(QStringLiteral("%1 个文件 · %2").arg(shown).arg(fmtBytes(total)));
+    m_fileStats->setText(QStringLiteral(
+                             "<span style='color:#00d2ff'>%1</span>"
+                             "<span style='color:#7dd3fc'> 个文件</span>"
+                             "<span style='color:#7dd3fc'> · </span>"
+                             "<span style='color:#00d2ff'>%2</span>")
+                             .arg(shown)
+                             .arg(fmtBytes(total)));
+    if (m_filePathLabel)
+        m_filePathLabel->setText(QStringLiteral("当前路径: %1").arg(dir.absolutePath()));
     updatePriorityPickup(priorityPath, priorityName, prioritySize);
     if (m_portalCount)
         m_portalCount->setText(QString::number(shown));

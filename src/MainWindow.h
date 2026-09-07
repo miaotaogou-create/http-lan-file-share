@@ -112,6 +112,7 @@ private:
     QListWidget *m_logList = nullptr;
     QLabel *m_toast = nullptr;
     QLabel *m_fileStats = nullptr;
+    QLabel *m_filePathLabel = nullptr;
     QLineEdit *m_fileFilter = nullptr;
 
     // 内嵌提货预览
