@@ -46,5 +46,6 @@
     <file>icons/activity_monitor.svg</file>
     <file>icons/network_nodes.svg</file>
     <file>icons/lock_protected.svg</file>
+    <file>icons/plus_add.svg</file>
   </qresource>
 </RCC>

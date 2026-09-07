@@ -456,6 +456,25 @@ QPushButton#Primary:hover {
   background: #10b981;
   border-color: #34d399;
 }
+QPushButton#AddNicBtn {
+  background: #10B981;
+  border: 1px solid #10B981;
+  border-radius: 6px;
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0 16px;
+  min-height: 36px;
+  max-height: 36px;
+}
+QPushButton#AddNicBtn:hover {
+  background: #34D399;
+  border-color: #6EE7B7;
+}
+QPushButton#AddNicBtn:pressed {
+  background: #059669;
+  border-color: #047857;
+}
 QPushButton#UploadShareBtn {
   background: rgba(6, 78, 59, 0.35);
   border: 1px solid rgba(16, 185, 129, 0.70);
@@ -1571,8 +1590,10 @@ void MainWindow::buildUi()
     maskCol->addWidget(maskLab);
     maskCol->addWidget(m_newMaskEdit);
 
-    auto *addNicBtn = new QPushButton(QStringLiteral("+ 追加绑定 IP"));
-    addNicBtn->setObjectName(QStringLiteral("Primary"));
+    auto *addNicBtn = new QPushButton(QStringLiteral("追加绑定 IP"));
+    addNicBtn->setObjectName(QStringLiteral("AddNicBtn"));
+    addNicBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/plus_add.svg"), 14));
+    addNicBtn->setIconSize(QSize(14, 14));
     addNicBtn->setCursor(Qt::PointingHandCursor);
     addNicBtn->setFixedHeight(36);
 
