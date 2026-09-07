@@ -1195,7 +1195,7 @@ void MainWindow::buildUi()
     shareTitleRow->setSpacing(6);
     auto *shareTitleIcon = new QLabel;
     shareTitleIcon->setFixedSize(14, 14);
-    shareTitleIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/wifi_lan.svg"), 14).pixmap(14, 14));
+    shareTitleIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/wifi_lan.svg"), 14));
     auto *shareTitle = new QLabel(QStringLiteral("局域网直连提货地址"));
     shareTitle->setObjectName(QStringLiteral("SectionCyan"));
     shareTitleRow->addWidget(shareTitleIcon, 0, Qt::AlignVCenter);
@@ -1213,7 +1213,7 @@ void MainWindow::buildUi()
     wifiBadge->setFixedSize(32, 32);
     wifiBadge->setAlignment(Qt::AlignCenter);
     wifiBadge->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
-    wifiBadge->setPixmap(loadSvgIcon(QStringLiteral(":/icons/wifi_lan_box.svg"), 32).pixmap(32, 32));
+    wifiBadge->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/wifi_lan_box.svg"), 32));
 
     m_ipCombo = new QComboBox;
     m_ipCombo->setObjectName(QStringLiteral("IpCombo"));
