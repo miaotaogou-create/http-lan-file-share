@@ -75,32 +75,85 @@ QString toRichMessage(const QString &message)
     return QStringLiteral("<span style='color:#E2E8F0;'>%1</span>").arg(out);
 }
 
-QString typeIconChar(const QString &type)
+// 行内事件图标：手绘 Lucide 风格，避开 Windows 系统 emoji/符号字形变形
+QPixmap makeTypeIcon(const QString &type, int size)
 {
-    if (type == QLatin1String("download") || type == QLatin1String("upload"))
-        return type == QLatin1String("upload") ? QStringLiteral("↑") : QStringLiteral("↓");
-    if (type == QLatin1String("start"))
-        return QStringLiteral("⏻");
-    if (type == QLatin1String("stop"))
-        return QStringLiteral("⏻");
-    if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del"))
-        return QStringLiteral("🛡");
-    return QStringLiteral("⌁");
-}
+    QPixmap pm(size, size);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    const qreal s = size / 24.0;
+    p.scale(s, s);
 
-QString typeIconStyle(const QString &type)
-{
-    if (type == QLatin1String("download"))
-        return QStringLiteral("color:#10B981;font-weight:900;font-size:14px;background:transparent;");
-    if (type == QLatin1String("upload"))
-        return QStringLiteral("color:#22D3EE;font-weight:900;font-size:14px;background:transparent;");
-    if (type == QLatin1String("start"))
-        return QStringLiteral("color:#00E5FF;font-weight:700;font-size:13px;background:transparent;");
-    if (type == QLatin1String("stop"))
-        return QStringLiteral("color:#F87171;font-weight:700;font-size:13px;background:transparent;");
-    if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del"))
-        return QStringLiteral("color:#F59E0B;font-size:12px;background:transparent;");
-    return QStringLiteral("color:#38BDF8;font-weight:700;font-size:12px;background:transparent;");
+    auto strokePen = [](const QColor &c, qreal w = 2.2) {
+        return QPen(c, w, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
+    };
+
+    if (type == QLatin1String("download")) {
+        // ArrowDownToLine
+        p.setPen(strokePen(QColor(0x10, 0xB9, 0x81)));
+        p.setBrush(Qt::NoBrush);
+        QPainterPath path;
+        path.moveTo(12, 4);
+        path.lineTo(12, 15);
+        path.moveTo(12, 15);
+        path.lineTo(7.5, 10.5);
+        path.moveTo(12, 15);
+        path.lineTo(16.5, 10.5);
+        path.moveTo(5, 19.5);
+        path.lineTo(19, 19.5);
+        p.drawPath(path);
+    } else if (type == QLatin1String("upload")) {
+        p.setPen(strokePen(QColor(0x22, 0xD3, 0xEE)));
+        p.setBrush(Qt::NoBrush);
+        QPainterPath path;
+        path.moveTo(12, 20);
+        path.lineTo(12, 9);
+        path.moveTo(12, 9);
+        path.lineTo(7.5, 13.5);
+        path.moveTo(12, 9);
+        path.lineTo(16.5, 13.5);
+        path.moveTo(5, 4.5);
+        path.lineTo(19, 4.5);
+        p.drawPath(path);
+    } else if (type == QLatin1String("start") || type == QLatin1String("stop")) {
+        const QColor c = (type == QLatin1String("start")) ? QColor(0x00, 0xE5, 0xFF)
+                                                          : QColor(0xF8, 0x71, 0x71);
+        p.setPen(strokePen(c, 2.3));
+        p.setBrush(Qt::NoBrush);
+        // Power：上竖线 + 下方开口圆环
+        p.drawLine(QPointF(12, 3.5), QPointF(12, 11.5));
+        QPainterPath arc;
+        arc.moveTo(18.2, 7.2);
+        arc.arcTo(QRectF(4.2, 4.8, 15.6, 15.6), 50, 260);
+        p.drawPath(arc);
+    } else if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del")) {
+        p.setPen(strokePen(QColor(0xF5, 0x9E, 0x0B), 2.1));
+        p.setBrush(Qt::NoBrush);
+        QPainterPath shield;
+        shield.moveTo(12, 3);
+        shield.lineTo(5, 5.8);
+        shield.lineTo(5, 12.2);
+        shield.cubicTo(5, 16.8, 8.2, 20.2, 12, 21.5);
+        shield.cubicTo(15.8, 20.2, 19, 16.8, 19, 12.2);
+        shield.lineTo(19, 5.8);
+        shield.closeSubpath();
+        p.drawPath(shield);
+    } else {
+        // check / 默认：天蓝活动折线（参考图中的 cyan pulse）
+        p.setPen(strokePen(QColor(0x38, 0xBD, 0xF8), 2.4));
+        p.setBrush(Qt::NoBrush);
+        QPainterPath path;
+        path.moveTo(3.5, 13.5);
+        path.lineTo(7.8, 13.5);
+        path.lineTo(11.2, 5.5);
+        path.lineTo(14.8, 19.5);
+        path.lineTo(17.5, 13.5);
+        path.lineTo(20.5, 13.5);
+        p.drawPath(path);
+    }
+    return pm;
 }
 
 } // namespace
@@ -279,10 +332,11 @@ QWidget *LogMonitorView::createRow(const QString &timestamp, const QString &type
         "font-size:12px;background:transparent;"));
     lay->addWidget(time, 0, Qt::AlignVCenter);
 
-    auto *typeIcon = new QLabel(typeIconChar(type));
-    typeIcon->setFixedWidth(16);
+    auto *typeIcon = new QLabel;
+    typeIcon->setFixedSize(16, 16);
     typeIcon->setAlignment(Qt::AlignCenter);
-    typeIcon->setStyleSheet(typeIconStyle(type));
+    typeIcon->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
+    typeIcon->setPixmap(makeTypeIcon(type, 16));
     lay->addWidget(typeIcon, 0, Qt::AlignVCenter);
 
     auto *content = new QLabel(toRichMessage(message));
