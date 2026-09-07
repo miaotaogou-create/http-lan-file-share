@@ -70,10 +70,10 @@ static QString fmtBytes(qint64 n)
 static QPixmap loadSvgPixmap(const QString &resPath, int size)
 {
     QSvgRenderer renderer(resPath);
-    const qreal dpr = qApp ? qApp->devicePixelRatio() : 1.0;
-    QPixmap pm(qMax(1, int(size * dpr)), qMax(1, int(size * dpr)));
+    if (!renderer.isValid())
+        return {};
+    QPixmap pm(size, size);
     pm.fill(Qt::transparent);
-    pm.setDevicePixelRatio(dpr);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::SmoothPixmapTransform, true);
@@ -83,7 +83,8 @@ static QPixmap loadSvgPixmap(const QString &resPath, int size)
 
 static QIcon loadSvgIcon(const QString &resPath, int size)
 {
-    return QIcon(loadSvgPixmap(resPath, size));
+    const QPixmap pm = loadSvgPixmap(resPath, size);
+    return pm.isNull() ? QIcon() : QIcon(pm);
 }
 
 static QIcon makeWinChromeIcon(int kind)
