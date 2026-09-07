@@ -75,8 +75,12 @@ static QPixmap loadSvgPixmap(const QString &resPath, int size)
     QSvgRenderer renderer(resPath);
     if (!renderer.isValid())
         return {};
-    QPixmap pm(size, size);
+    // 按设备像素比渲染，避免高分屏上矢量图标糊成一团
+    const qreal dpr = qApp ? qApp->devicePixelRatio() : 1.0;
+    const int px = qMax(1, qRound(size * dpr));
+    QPixmap pm(px, px);
     pm.fill(Qt::transparent);
+    pm.setDevicePixelRatio(dpr);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::SmoothPixmapTransform, true);
