@@ -1619,6 +1619,8 @@ void MainWindow::buildUi()
     m_nicTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
     m_nicTable->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
     m_nicTable->setColumnWidth(3, 120);
+    // 「操作」与右侧锁/垃圾桶对齐
+    m_nicTable->horizontalHeaderItem(3)->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
     m_nicTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_nicTable->setSelectionMode(QAbstractItemView::SingleSelection);
     m_nicTable->setFocusPolicy(Qt::NoFocus);
@@ -2318,7 +2320,8 @@ QWidget *MainWindow::makeNicActionCell(const QString &ip, bool isPrimary)
 {
     auto *w = new QWidget;
     auto *lay = new QHBoxLayout(w);
-    lay->setContentsMargins(4, 0, 10, 0);
+    lay->setContentsMargins(4, 0, 12, 0);
+    lay->setSpacing(6);
     lay->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
     if (isPrimary) {
         auto *lockIcon = new QLabel;
