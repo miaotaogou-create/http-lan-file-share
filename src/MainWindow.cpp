@@ -222,33 +222,37 @@ QPushButton#Danger {
   color: #fecdd3;
   font-weight: 700;
 }
-QPushButton#Tab,
-QPushButton#TabActive,
-QPushButton#TabActiveCyan,
-QPushButton#TabActiveIndigo {
+QFrame#TabStrip QPushButton {
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 4px;
-  padding: 4px 10px;
-  min-height: 26px;
+  padding: 0px 10px;
+  margin: 0px;
+  min-height: 0px;
+  max-height: 24px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
 }
-QPushButton#TabActive {
-  background: rgba(16,185,129,0.22);
-  border: 1px solid rgba(16,185,129,0.45);
+QFrame#TabStrip QPushButton#TabActive {
+  background: rgba(16,185,129,0.28);
   color: #6ee7b7;
+  border: none;
 }
-QPushButton#TabActiveCyan {
-  background: rgba(6,182,212,0.22);
-  border: 1px solid rgba(6,182,212,0.45);
+QFrame#TabStrip QPushButton#TabActiveCyan {
+  background: rgba(6,182,212,0.28);
   color: #67e8f9;
+  border: none;
 }
-QPushButton#TabActiveIndigo {
-  background: rgba(99,102,241,0.25);
-  border: 1px solid rgba(99,102,241,0.45);
+QFrame#TabStrip QPushButton#TabActiveIndigo {
+  background: rgba(99,102,241,0.30);
   color: #a5b4fc;
+  border: none;
+}
+QFrame#TabStrip {
+  background: #0d182b;
+  border: 1px solid #1d3153;
+  border-radius: 8px;
 }
 QHeaderView::section {
   background: #0e1b2f;
@@ -307,12 +311,6 @@ QLabel#Toast {
 QWidget#TitleBar {
   background: #09111e;
   border-bottom: 1px solid #1b2b46;
-}
-QWidget#TabStrip, QFrame#TabStrip {
-  background: #0d182b;
-  border: 1px solid #1d3153;
-  border-radius: 8px;
-  min-height: 36px;
 }
 QPushButton#WinBtn {
   background: transparent;
@@ -461,17 +459,12 @@ void MainWindow::buildUi()
     tabs->setObjectName(QStringLiteral("TabStrip"));
     tabs->setFrameShape(QFrame::NoFrame);
     tabs->setAttribute(Qt::WA_StyledBackground, true);
+    tabs->setFixedHeight(32);
     tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
-    auto *tabsOuter = new QHBoxLayout(tabs);
-    // 1px 留给 TabStrip 自身边框，内部再垫一圈，选中描边不会贴外框
-    tabsOuter->setContentsMargins(1, 1, 1, 1);
-    tabsOuter->setSpacing(0);
-
-    auto *tabsInner = new QWidget;
-    auto *tabsLay = new QHBoxLayout(tabsInner);
-    tabsLay->setContentsMargins(5, 4, 5, 4);
-    tabsLay->setSpacing(3);
-    tabsOuter->addWidget(tabsInner);
+    auto *tabsLay = new QHBoxLayout(tabs);
+    // 外框 32px，上下各留 4px，按钮固定 24px，选中块不会顶到边线
+    tabsLay->setContentsMargins(4, 4, 4, 4);
+    tabsLay->setSpacing(2);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
     m_tabPortal = new QPushButton(QStringLiteral("局域网提货 Web 端"));
@@ -479,43 +472,29 @@ void MainWindow::buildUi()
     m_tabManager->setIcon(makeTabIcon(0, QColor(QStringLiteral("#94a3b8"))));
     m_tabPortal->setIcon(makeTabIcon(1, QColor(QStringLiteral("#94a3b8"))));
     m_tabLogs->setIcon(makeTabIcon(2, QColor(QStringLiteral("#94a3b8"))));
-    m_tabManager->setIconSize(QSize(14, 14));
-    m_tabPortal->setIconSize(QSize(14, 14));
-    m_tabLogs->setIconSize(QSize(14, 14));
     for (auto *b : {m_tabManager, m_tabPortal, m_tabLogs}) {
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setMinimumHeight(28);
+        b->setFixedHeight(24);
+        b->setIconSize(QSize(14, 14));
         b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
 
-    auto *managerWrap = new QWidget;
-    auto *mw = new QHBoxLayout(managerWrap);
-    mw->setContentsMargins(0, 0, 0, 0);
-    mw->setSpacing(4);
-    mw->addWidget(m_tabManager);
     m_runDot = new QLabel;
     m_runDot->setObjectName(QStringLiteral("RunDot"));
     m_runDot->setVisible(false);
-    mw->addWidget(m_runDot);
-    mw->addSpacing(4);
 
-    auto *portalWrap = new QWidget;
-    auto *pw = new QHBoxLayout(portalWrap);
-    pw->setContentsMargins(0, 0, 0, 0);
-    pw->setSpacing(4);
-    pw->addWidget(m_tabPortal);
     m_portalCount = new QLabel(QStringLiteral("0"));
     m_portalCount->setObjectName(QStringLiteral("PortalCount"));
     m_portalCount->setAlignment(Qt::AlignCenter);
     m_portalCount->setFixedHeight(16);
-    pw->addWidget(m_portalCount);
-    pw->addSpacing(4);
 
-    tabsLay->addWidget(managerWrap);
-    tabsLay->addWidget(portalWrap);
-    tabsLay->addWidget(m_tabLogs);
+    tabsLay->addWidget(m_tabManager, 0, Qt::AlignVCenter);
+    tabsLay->addWidget(m_runDot, 0, Qt::AlignVCenter);
+    tabsLay->addWidget(m_tabPortal, 0, Qt::AlignVCenter);
+    tabsLay->addWidget(m_portalCount, 0, Qt::AlignVCenter);
+    tabsLay->addWidget(m_tabLogs, 0, Qt::AlignVCenter);
 
     auto *minBtn = makeWinChromeBtn(m_titleBar, 0);
     auto *maxBtn = makeWinChromeBtn(m_titleBar, 1);
