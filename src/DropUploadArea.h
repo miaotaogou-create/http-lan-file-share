@@ -15,6 +15,9 @@ signals:
     void filesDropped(const QStringList &filePaths);
 
 protected:
+    void paintEvent(QPaintEvent *event) override;
+    void enterEvent(QEnterEvent *event) override;
+    void leaveEvent(QEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dragLeaveEvent(QDragLeaveEvent *event) override;
     void dropEvent(QDropEvent *event) override;
@@ -22,8 +25,10 @@ protected:
 
 private:
     void setDragHover(bool hover);
+    void refreshTextStyle();
 
     QLabel *m_iconLabel = nullptr;
     QLabel *m_textLabel = nullptr;
     bool m_dragHover = false;
+    bool m_mouseHover = false;
 };
