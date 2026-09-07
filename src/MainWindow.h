@@ -42,6 +42,7 @@ private slots:
     void addNicIp();
     void deleteSelectedNic();
     void uploadLocalFiles();
+    void importFilesToShare(const QStringList &paths);
     void downloadSelectedFile();
     void deleteSelectedFile();
     void copyCurlForSelected();

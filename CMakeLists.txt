@@ -22,6 +22,7 @@ set(APP_SOURCES
   src/QrCodeWidget.cpp
   src/SelfCheckDialog.cpp
   src/StatusBadgeWidget.cpp
+  src/DropUploadArea.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 

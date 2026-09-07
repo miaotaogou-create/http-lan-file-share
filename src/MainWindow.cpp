@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 #include "SelfCheckDialog.h"
 #include "StatusBadgeWidget.h"
+#include "DropUploadArea.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -1307,10 +1308,9 @@ void MainWindow::buildUi()
     fileHead->addWidget(uploadBtn, 0, Qt::AlignTop);
     fileLay->addLayout(fileHead);
 
-    auto *dropHint = new QLabel(QStringLiteral("支持局域网千兆互传：使用上方按钮选择文件加入 HTTP 共享目录"));
-    dropHint->setAlignment(Qt::AlignCenter);
-    dropHint->setStyleSheet(QStringLiteral("border:1px dashed #1f324f;border-radius:8px;padding:12px;color:#94a3b8;background:#070d18;"));
-    fileLay->addWidget(dropHint);
+    auto *dropArea = new DropUploadArea;
+    fileLay->addWidget(dropArea);
+    connect(dropArea, &DropUploadArea::filesDropped, this, &MainWindow::importFilesToShare);
 
     auto *filterRow = new QHBoxLayout;
     m_fileFilter = new QLineEdit;
@@ -1965,18 +1965,33 @@ QWidget *MainWindow::makeFileActionBar(const QString &path, const QString &name)
 void MainWindow::uploadLocalFiles()
 {
     const QStringList paths = QFileDialog::getOpenFileNames(this, QStringLiteral("选择要加入共享的文件"));
+    importFilesToShare(paths);
+}
+
+void MainWindow::importFilesToShare(const QStringList &paths)
+{
     if (paths.isEmpty())
         return;
     const QString root = QDir::fromNativeSeparators(m_folderEdit->text().trimmed());
+    if (root.isEmpty()) {
+        showToast(QStringLiteral("请先设置共享目录"));
+        return;
+    }
     QDir().mkpath(root);
     int n = 0;
     for (const QString &p : paths) {
         const QFileInfo fi(p);
+        if (!fi.isFile())
+            continue;
         const QString dest = QDir(root).filePath(fi.fileName());
         if (QFile::exists(dest))
             QFile::remove(dest);
         if (QFile::copy(p, dest))
             ++n;
+    }
+    if (n <= 0) {
+        showToast(QStringLiteral("没有可加入的文件"));
+        return;
     }
     addLog(QStringLiteral("upload"), QStringLiteral("本地添加了 %1 个文件到共享目录").arg(n));
     showToast(QStringLiteral("成功添加 %1 个文件").arg(n));

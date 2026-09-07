@@ -37,5 +37,7 @@
     <file>icons/trash_delete.svg</file>
     <file>icons/upload_icon.svg</file>
     <file>icons/upload_icon_glow.svg</file>
+    <file>icons/lightning_bolt.svg</file>
+    <file>icons/lightning_bolt_glow.svg</file>
   </qresource>
 </RCC>
