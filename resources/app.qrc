@@ -23,5 +23,7 @@
     <file>icons/wifi_lan_box.svg</file>
     <file>icons/copy_clipboard.svg</file>
     <file>icons/external_link.svg</file>
+    <file>icons/package_box_cyan.svg</file>
+    <file>icons/package_box_glow.svg</file>
   </qresource>
 </RCC>

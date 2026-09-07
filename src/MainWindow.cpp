@@ -1039,7 +1039,24 @@ void MainWindow::buildUi()
     scanTipLay->addWidget(scanTipText, 1, Qt::AlignVCenter);
     qrLay->addWidget(scanTip);
 
-    qrLay->addWidget(new QLabel(QStringLiteral("共享文件快捷提货")));
+    auto *pkgHead = new QHBoxLayout;
+    pkgHead->setContentsMargins(0, 4, 0, 0);
+    pkgHead->setSpacing(6);
+    auto *pkgIcon = new QLabel;
+    pkgIcon->setFixedSize(14, 14);
+    pkgIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/package_box_cyan.svg"), 14));
+    auto *pkgTitle = new QLabel(QStringLiteral("共享文件快捷提货"));
+    pkgTitle->setStyleSheet(QStringLiteral(
+        "color:#cbd5e1;font-size:12px;font-weight:600;background:transparent;"));
+    auto *readyBadge = new QLabel(QStringLiteral("就绪共享"));
+    readyBadge->setStyleSheet(QStringLiteral(
+        "color:#34d399;background:rgba(6,78,59,0.55);border:1px solid rgba(16,185,129,0.45);"
+        "border-radius:4px;padding:2px 8px;font-size:10px;font-weight:600;"));
+    pkgHead->addWidget(pkgIcon, 0, Qt::AlignVCenter);
+    pkgHead->addWidget(pkgTitle, 0, Qt::AlignVCenter);
+    pkgHead->addStretch(1);
+    pkgHead->addWidget(readyBadge, 0, Qt::AlignVCenter);
+    qrLay->addLayout(pkgHead);
     m_priorityFileLabel = new QLabel(QStringLiteral("暂无打包产物"));
     m_priorityFileLabel->setStyleSheet(QStringLiteral("background:#070d18;border:1px solid #1f324f;border-radius:8px;padding:10px;"));
     qrLay->addWidget(m_priorityFileLabel);
