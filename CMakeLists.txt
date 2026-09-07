@@ -27,6 +27,10 @@ add_executable(HttpLanFileShare WIN32 ${APP_SOURCES}
   resources/app.qrc
 )
 
+if(WIN32)
+  target_sources(HttpLanFileShare PRIVATE resources/app.rc)
+endif()
+
 target_include_directories(HttpLanFileShare PRIVATE
   src
   third_party/qrcodegen
