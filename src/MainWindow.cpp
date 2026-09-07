@@ -9,6 +9,7 @@
 
 #include <QAbstractSpinBox>
 #include <QAbstractItemView>
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
 #include <QCoreApplication>
@@ -64,6 +65,18 @@ static QString fmtBytes(qint64 n)
         ++i;
     }
     return QString::number(v, 'f', i == 0 ? 0 : 1) + QLatin1Char(' ') + QLatin1String(u[i]);
+}
+
+static QIcon loadSvgIcon(const QString &resPath, int size)
+{
+    QSvgRenderer renderer(resPath);
+    QPixmap pm(size, size);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+    renderer.render(&p, QRectF(0, 0, size, size));
+    return QIcon(pm);
 }
 
 static QIcon makeWinChromeIcon(int kind)
@@ -446,6 +459,38 @@ QPushButton#SelfCheckBtn:hover {
   background: rgba(34, 211, 238, 0.10);
   border: 1px solid #67e8f9;
   color: #67e8f9;
+}
+QPushButton#ResetFolderBtn {
+  background: transparent;
+  border: none;
+  color: #22d3ee;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 2px;
+  min-height: 18px;
+}
+QPushButton#ResetFolderBtn:hover {
+  color: #67e8f9;
+  text-decoration: underline;
+}
+QPushButton#BrowseFolderBtn {
+  background: #122035;
+  border: 1px solid #233857;
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 12px;
+  padding: 0 14px;
+  min-height: 34px;
+}
+QPushButton#BrowseFolderBtn:hover {
+  background: #182b46;
+  border-color: #38bdf8;
+}
+QLineEdit#FolderPathEdit {
+  font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-size: 12px;
+  min-height: 32px;
+  padding-left: 4px;
 }
 QListWidget {
   background: #070d18;
@@ -841,10 +886,37 @@ void MainWindow::buildUi()
     httpHead->addWidget(m_toggleBtn, 0, Qt::AlignTop);
     httpLay->addLayout(httpHead);
 
-    httpLay->addWidget(new QLabel(QStringLiteral("本地共享文件夹路径")));
+    auto *folderHead = new QHBoxLayout;
+    folderHead->setContentsMargins(0, 0, 0, 0);
+    folderHead->setSpacing(6);
+    auto *folderTitleIcon = new QLabel;
+    folderTitleIcon->setFixedSize(15, 15);
+    folderTitleIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/folder_outline_cyan.svg"), 15).pixmap(15, 15));
+    auto *folderTitle = new QLabel(QStringLiteral("本地共享文件夹路径"));
+    folderTitle->setStyleSheet(QStringLiteral("color:#cbd5e1;font-size:12px;font-weight:600;background:transparent;"));
+    auto *resetFolderBtn = new QPushButton(QStringLiteral("重设为默认共享目录"));
+    resetFolderBtn->setObjectName(QStringLiteral("ResetFolderBtn"));
+    resetFolderBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/refresh_cw_cyan.svg"), 13));
+    resetFolderBtn->setIconSize(QSize(13, 13));
+    resetFolderBtn->setCursor(Qt::PointingHandCursor);
+    folderHead->addWidget(folderTitleIcon, 0, Qt::AlignVCenter);
+    folderHead->addWidget(folderTitle, 0, Qt::AlignVCenter);
+    folderHead->addStretch(1);
+    folderHead->addWidget(resetFolderBtn, 0, Qt::AlignVCenter);
+    httpLay->addLayout(folderHead);
+
     auto *folderRow = new QHBoxLayout;
+    folderRow->setSpacing(8);
     m_folderEdit = new QLineEdit(m_shareRoot);
+    m_folderEdit->setObjectName(QStringLiteral("FolderPathEdit"));
+    m_folderEdit->setPlaceholderText(QStringLiteral("例如 D:/SharedFiles 或 C:/Users/Public/Downloads"));
+    auto *folderLead = new QAction(loadSvgIcon(QStringLiteral(":/icons/folder_filled_yellow.svg"), 16), QString(), m_folderEdit);
+    m_folderEdit->addAction(folderLead, QLineEdit::LeadingPosition);
     auto *browseBtn = new QPushButton(QStringLiteral("浏览..."));
+    browseBtn->setObjectName(QStringLiteral("BrowseFolderBtn"));
+    browseBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/search_browse.svg"), 14));
+    browseBtn->setIconSize(QSize(14, 14));
+    browseBtn->setCursor(Qt::PointingHandCursor);
     folderRow->addWidget(m_folderEdit, 1);
     folderRow->addWidget(browseBtn);
     httpLay->addLayout(folderRow);
@@ -1131,6 +1203,21 @@ void MainWindow::buildUi()
     // 连接信号
     connect(m_toggleBtn, &QPushButton::clicked, this, &MainWindow::toggleServer);
     connect(browseBtn, &QPushButton::clicked, this, &MainWindow::browseFolder);
+    connect(resetFolderBtn, &QPushButton::clicked, this, [this] {
+        if (m_running) {
+            showToast(QStringLiteral("请先停止共享服务再修改目录"));
+            return;
+        }
+        const QString def = QDir::fromNativeSeparators(
+            QStandardPaths::writableLocation(QStandardPaths::DownloadLocation)
+            + QStringLiteral("/SharedFiles"));
+        QDir().mkpath(def);
+        m_shareRoot = def;
+        m_folderEdit->setText(m_shareRoot);
+        addLog(QStringLiteral("check"), QStringLiteral("已重设为默认共享目录: %1").arg(m_shareRoot));
+        refreshFiles();
+        showToast(QStringLiteral("已重设为默认共享目录"));
+    });
     connect(copyBtn, &QPushButton::clicked, this, &MainWindow::copyShareUrl);
     connect(openBtn, &QPushButton::clicked, this, &MainWindow::openPortalInBrowser);
     connect(openReal, &QPushButton::clicked, this, &MainWindow::openPortalInBrowser);

@@ -11,5 +11,9 @@
     <file>icons/chevron_up.png</file>
     <file>icons/globe_network.svg</file>
     <file>icons/globe_container.svg</file>
+    <file>icons/folder_outline_cyan.svg</file>
+    <file>icons/refresh_cw_cyan.svg</file>
+    <file>icons/folder_filled_yellow.svg</file>
+    <file>icons/search_browse.svg</file>
   </qresource>
 </RCC>
