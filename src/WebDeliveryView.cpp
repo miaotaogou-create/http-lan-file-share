@@ -69,56 +69,51 @@ WebDeliveryView::WebDeliveryView(QWidget *parent)
         "QScrollArea { background:transparent; border:none; }"
         "QScrollArea > QWidget > QWidget { background:transparent; }"));
 
-    auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(0, 0, 0, 0);
+    auto *root = new QHBoxLayout(this);
+    // 左右留白适中，卡片尽量宽；上下贴边铺满
+    root->setContentsMargins(36, 14, 36, 16);
     root->setSpacing(0);
+    root->addStretch(1);
 
-    auto *scroll = new QScrollArea;
-    scroll->setWidgetResizable(true);
-    scroll->setFrameShape(QFrame::NoFrame);
-    scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-    scroll->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
-
-    auto *page = new QWidget;
-    auto *pageLay = new QHBoxLayout(page);
-    pageLay->setContentsMargins(24, 20, 24, 24);
-    pageLay->setSpacing(0);
-    pageLay->addStretch(1);
-
-    // 中间列：最大约 960px，左右留白形成居中卡片感
     auto *column = new QWidget;
-    column->setMaximumWidth(960);
-    column->setMinimumWidth(560);
-    column->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    column->setMaximumWidth(1320);
+    column->setMinimumWidth(720);
+    column->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     auto *colLay = new QVBoxLayout(column);
     colLay->setContentsMargins(0, 0, 0, 0);
-    colLay->setSpacing(16);
+    colLay->setSpacing(12);
 
-    // 返回栏在卡片外上方（对齐参考）
-    colLay->addWidget(createTopNavBar());
+    colLay->addWidget(createTopNavBar(), 0);
 
     auto *card = new QFrame;
     card->setObjectName(QStringLiteral("DeliveryCard"));
     card->setAttribute(Qt::WA_StyledBackground, true);
+    card->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     auto *cardLay = new QVBoxLayout(card);
-    cardLay->setContentsMargins(24, 22, 24, 22);
-    cardLay->setSpacing(18);
-    cardLay->addWidget(createHeroHeader());
-    cardLay->addWidget(createSearchBar());
+    cardLay->setContentsMargins(28, 22, 28, 22);
+    cardLay->setSpacing(16);
+    cardLay->addWidget(createHeroHeader(), 0);
+    cardLay->addWidget(createSearchBar(), 0);
 
-    m_fileListLayout = new QVBoxLayout;
+    // 文件列表占满卡片剩余高度，多了再滚
+    auto *listScroll = new QScrollArea;
+    listScroll->setWidgetResizable(true);
+    listScroll->setFrameShape(QFrame::NoFrame);
+    listScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    listScroll->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    auto *listHost = new QWidget;
+    m_fileListLayout = new QVBoxLayout(listHost);
+    m_fileListLayout->setContentsMargins(0, 0, 0, 0);
     m_fileListLayout->setSpacing(12);
-    cardLay->addLayout(m_fileListLayout);
-    cardLay->addWidget(createBoardGuideCard());
+    m_fileListLayout->addStretch(1);
+    listScroll->setWidget(listHost);
+    cardLay->addWidget(listScroll, 1);
 
-    colLay->addWidget(card, 0);
-    colLay->addStretch(1);
+    cardLay->addWidget(createBoardGuideCard(), 0);
+    colLay->addWidget(card, 1);
 
-    pageLay->addWidget(column, 1);
-    pageLay->addStretch(1);
-
-    scroll->setWidget(page);
-    root->addWidget(scroll, 1);
+    root->addWidget(column, 1);
+    root->addStretch(1);
 }
 
 QWidget *WebDeliveryView::createTopNavBar()
@@ -401,6 +396,7 @@ void WebDeliveryView::rebuildFileCards()
     }
     for (const WebDeliveryItem &item : m_items)
         m_fileListLayout->addWidget(createFileCard(item));
+    m_fileListLayout->addStretch(1);
 }
 
 void WebDeliveryView::updateListTitle()
