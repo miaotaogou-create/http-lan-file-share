@@ -40,6 +40,8 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QHostAddress>
+#include <QAbstractSocket>
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QPushButton>

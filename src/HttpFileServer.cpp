@@ -375,7 +375,8 @@ void HttpFileServer::sendFile(QTcpSocket *sock, const QString &absPath, const QS
     }
 
     sock->disconnectFromHost();
-    emit clientDownload(clientIp, fi.fileName(), length);
+    if (!headOnly)
+        emit clientDownload(clientIp, fi.fileName(), length);
 }
 
 void HttpFileServer::handleUpload(QTcpSocket *sock, ConnState &st, const QString &clientIp)
