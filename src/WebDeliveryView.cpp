@@ -346,7 +346,7 @@ QWidget *WebDeliveryView::createBoardGuideCard()
     w->setAttribute(Qt::WA_StyledBackground, true);
     w->setStyleSheet(QStringLiteral(
         "QWidget#guideBox {"
-        "  background-color:#030814; border:1px solid #0F2036; border-radius:8px;"
+        "  background-color:#080e1a; border:1px solid #1B2F4F; border-radius:10px;"
         "}"));
 
     auto *lay = new QVBoxLayout(w);
@@ -362,24 +362,35 @@ QWidget *WebDeliveryView::createBoardGuideCard()
 
     auto *cmds = new QHBoxLayout;
     cmds->setSpacing(14);
-    const QString boxCss = QStringLiteral(
-        "background-color:#02060D;border:1px solid #0B1728;border-radius:6px;"
-        "font-family:Consolas,'Cascadia Mono',monospace;font-size:12px;padding:10px 14px;");
 
-    m_guideCmd1 = new QLabel;
-    m_guideCmd1->setTextFormat(Qt::RichText);
-    m_guideCmd1->setWordWrap(true);
-    m_guideCmd1->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_guideCmd1->setStyleSheet(boxCss);
+    // QFrame 画边框比 QLabel 稳；描边提亮到可见的青灰
+    auto makeCmdFrame = [](QLabel **outLabel) -> QFrame * {
+        auto *frame = new QFrame;
+        frame->setObjectName(QStringLiteral("CmdBox"));
+        frame->setAttribute(Qt::WA_StyledBackground, true);
+        frame->setStyleSheet(QStringLiteral(
+            "QFrame#CmdBox {"
+            "  background-color:#050912;"
+            "  border:1px solid #2A4A6E;"
+            "  border-radius:8px;"
+            "}"));
+        auto *fl = new QVBoxLayout(frame);
+        fl->setContentsMargins(14, 10, 14, 10);
+        fl->setSpacing(0);
+        auto *lab = new QLabel;
+        lab->setTextFormat(Qt::RichText);
+        lab->setWordWrap(true);
+        lab->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        lab->setStyleSheet(QStringLiteral(
+            "background:transparent;"
+            "font-family:Consolas,'Cascadia Mono',monospace;font-size:12px;"));
+        fl->addWidget(lab);
+        *outLabel = lab;
+        return frame;
+    };
 
-    m_guideCmd2 = new QLabel;
-    m_guideCmd2->setTextFormat(Qt::RichText);
-    m_guideCmd2->setWordWrap(true);
-    m_guideCmd2->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_guideCmd2->setStyleSheet(boxCss);
-
-    cmds->addWidget(m_guideCmd1, 1);
-    cmds->addWidget(m_guideCmd2, 1);
+    cmds->addWidget(makeCmdFrame(&m_guideCmd1), 1);
+    cmds->addWidget(makeCmdFrame(&m_guideCmd2), 1);
     lay->addLayout(cmds);
     return w;
 }
