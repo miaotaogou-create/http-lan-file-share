@@ -70,14 +70,11 @@ WebDeliveryView::WebDeliveryView(QWidget *parent)
         "QScrollArea > QWidget > QWidget { background:transparent; }"));
 
     auto *root = new QHBoxLayout(this);
-    // 左右留白适中，卡片尽量宽；上下贴边铺满
-    root->setContentsMargins(36, 14, 36, 16);
+    // 与参考一致：左右窄边，卡片横向铺满可用区
+    root->setContentsMargins(24, 14, 24, 16);
     root->setSpacing(0);
-    root->addStretch(1);
 
     auto *column = new QWidget;
-    column->setMaximumWidth(1320);
-    column->setMinimumWidth(720);
     column->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     auto *colLay = new QVBoxLayout(column);
     colLay->setContentsMargins(0, 0, 0, 0);
@@ -113,7 +110,6 @@ WebDeliveryView::WebDeliveryView(QWidget *parent)
     colLay->addWidget(card, 1);
 
     root->addWidget(column, 1);
-    root->addStretch(1);
 }
 
 QWidget *WebDeliveryView::createTopNavBar()
