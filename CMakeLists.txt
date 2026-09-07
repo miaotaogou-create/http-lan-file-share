@@ -23,6 +23,7 @@ set(APP_SOURCES
   src/SelfCheckDialog.cpp
   src/StatusBadgeWidget.cpp
   src/DropUploadArea.cpp
+  src/BreathingBoltIcon.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 

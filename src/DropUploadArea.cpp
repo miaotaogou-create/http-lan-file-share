@@ -1,5 +1,7 @@
 #include "DropUploadArea.h"
 
+#include "BreathingBoltIcon.h"
+
 #include <QDragEnterEvent>
 #include <QDropEvent>
 #include <QEnterEvent>
@@ -11,27 +13,8 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPaintEvent>
-#include <QPixmap>
 #include <QSizePolicy>
-#include <QSvgRenderer>
 #include <QUrl>
-
-namespace {
-
-QPixmap loadBoltPixmap(int size)
-{
-    QSvgRenderer renderer(QStringLiteral(":/icons/lightning_bolt.svg"));
-    if (!renderer.isValid())
-        return {};
-    QPixmap pm(size, size);
-    pm.fill(Qt::transparent);
-    QPainter p(&pm);
-    p.setRenderHint(QPainter::Antialiasing, true);
-    renderer.render(&p, QRectF(0, 0, size, size));
-    return pm;
-}
-
-} // namespace
 
 DropUploadArea::DropUploadArea(QWidget *parent)
     : QFrame(parent)
@@ -48,10 +31,7 @@ DropUploadArea::DropUploadArea(QWidget *parent)
     lay->setSpacing(8);
     lay->setAlignment(Qt::AlignCenter);
 
-    m_iconLabel = new QLabel;
-    m_iconLabel->setFixedSize(18, 18);
-    m_iconLabel->setPixmap(loadBoltPixmap(18));
-    m_iconLabel->setStyleSheet(QStringLiteral("background:transparent;"));
+    auto *boltIcon = new BreathingBoltIcon(this);
 
     m_textLabel = new QLabel(QStringLiteral(
         "支持局域网千兆极速互传：拖拽任意本地文件到此处，或点击选择直接加入 HTTP 共享"));
@@ -59,7 +39,7 @@ DropUploadArea::DropUploadArea(QWidget *parent)
     m_textLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
     m_textLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
-    lay->addWidget(m_iconLabel, 0, Qt::AlignVCenter);
+    lay->addWidget(boltIcon, 0, Qt::AlignVCenter);
     lay->addWidget(m_textLabel, 0, Qt::AlignVCenter);
 
     refreshTextStyle();
