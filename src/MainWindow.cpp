@@ -9,6 +9,7 @@
 #include <QClipboard>
 #include <QComboBox>
 #include <QDesktopServices>
+#include <QEvent>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
@@ -17,14 +18,17 @@
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QIcon>
 #include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMessageBox>
+#include <QMouseEvent>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QPainter>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QStackedWidget>
@@ -38,6 +42,7 @@
 #include <QVBoxLayout>
 #include <QDir>
 #include <QStandardPaths>
+#include <QWindow>
 
 static QString fmtBytes(qint64 n)
 {
@@ -51,9 +56,41 @@ static QString fmtBytes(qint64 n)
     return QString::number(v, 'f', i == 0 ? 0 : 1) + QLatin1Char(' ') + QLatin1String(u[i]);
 }
 
+static QIcon makeTabIcon(int kind, const QColor &color)
+{
+    QPixmap pm(16, 16);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(QPen(color, 1.5, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    if (kind == 0) {
+        // 滑块/控制面板
+        p.drawLine(3, 4, 13, 4);
+        p.drawLine(3, 8, 13, 8);
+        p.drawLine(3, 12, 13, 12);
+        p.setBrush(color);
+        p.drawEllipse(QPointF(6, 4), 2, 2);
+        p.drawEllipse(QPointF(11, 8), 2, 2);
+        p.drawEllipse(QPointF(7, 12), 2, 2);
+    } else if (kind == 1) {
+        // 手机
+        p.setBrush(Qt::NoBrush);
+        p.drawRoundedRect(QRectF(5, 1.5, 6, 13), 1.5, 1.5);
+        p.drawLine(7, 12.5, 9, 12.5);
+    } else {
+        // 活动波形
+        p.drawPolyline(QPolygonF({QPointF(1, 10), QPointF(4, 10), QPointF(6, 4), QPointF(8, 13),
+                                  QPointF(10, 7), QPointF(12, 10), QPointF(15, 10)}));
+    }
+    return QIcon(pm);
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    // 无边框，自绘标题栏对齐参考图
+    setWindowFlags(Qt::Window | Qt::FramelessWindowHint);
+
     m_server = new HttpFileServer(this);
     m_logs = new ActivityLogModel(this);
     m_watcher = new QFileSystemWatcher(this);
@@ -68,6 +105,8 @@ MainWindow::MainWindow(QWidget *parent)
     refreshFiles();
     updateShareUrlUi();
     setRunningUi(false);
+    updateUacBadge();
+    updateTabChrome(0);
 
     connect(m_server, &HttpFileServer::started, this, &MainWindow::onServerStarted);
     connect(m_server, &HttpFileServer::stopped, this, &MainWindow::onServerStopped);
@@ -79,14 +118,9 @@ MainWindow::MainWindow(QWidget *parent)
     });
     connect(m_watcher, &QFileSystemWatcher::directoryChanged, this, &MainWindow::refreshFiles);
 
-    if (NicManager::isElevated())
-        m_uacBadge->setText(QStringLiteral("UAC 已授权"));
-    else
-        m_uacBadge->setText(QStringLiteral("标准权限"));
-
     addLog(QStringLiteral("check"), QStringLiteral("客户端已启动，等待开启 HTTP 共享"));
     resize(1180, 860);
-    setWindowTitle(QStringLiteral("HTTP 局域网极速文件共享客户端  ·  Win x64 · v1.0.0"));
+    setWindowTitle(QStringLiteral("HTTP 局域网极速文件共享客户端"));
 }
 
 MainWindow::~MainWindow()
@@ -192,11 +226,13 @@ QLabel#Badge {
   color: #67e8f9;
 }
 QLabel#Uac {
-  background: rgba(120,53,15,0.4);
-  border: 1px solid rgba(245,158,11,0.5);
+  background: rgba(120,53,15,0.45);
+  border: 1px solid rgba(245,158,11,0.55);
   border-radius: 6px;
-  padding: 3px 8px;
+  padding: 3px 9px;
   color: #fcd34d;
+  font-size: 11px;
+  font-weight: 600;
 }
 QLabel#Toast {
   background: #0e1d33;
@@ -204,6 +240,50 @@ QLabel#Toast {
   border-radius: 12px;
   padding: 10px 16px;
   color: #f1f5f9;
+}
+QWidget#TitleBar {
+  background: #09111e;
+  border-bottom: 1px solid #1b2b46;
+}
+QWidget#TabStrip {
+  background: #0d182b;
+  border: 1px solid #1d3153;
+  border-radius: 8px;
+}
+QPushButton#WinBtn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #94a3b8;
+  font-size: 13px;
+  padding: 0;
+  min-width: 34px;
+  max-width: 34px;
+  min-height: 26px;
+}
+QPushButton#WinBtn:hover {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+QPushButton#WinClose:hover {
+  background: #e11d48;
+  color: white;
+}
+QLabel#PortalCount {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  min-width: 16px;
+}
+QLabel#RunDot {
+  background: #34d399;
+  border-radius: 3px;
+  min-width: 6px;
+  max-width: 6px;
+  min-height: 6px;
+  max-height: 6px;
 }
 )QSS"));
 }
@@ -223,41 +303,134 @@ void MainWindow::buildUi()
     root->setContentsMargins(0, 0, 0, 0);
     root->setSpacing(0);
 
-    // 顶栏
-    auto *titleBar = new QWidget;
-    titleBar->setStyleSheet(QStringLiteral("background:#09111e;border-bottom:1px solid #1b2b46;"));
-    auto *tb = new QHBoxLayout(titleBar);
-    tb->setContentsMargins(12, 8, 12, 8);
+    // 顶栏（对齐参考图：图标 / 标题 / 版本 / UAC | 三页签 | 窗控）
+    m_titleBar = new QWidget;
+    m_titleBar->setObjectName(QStringLiteral("TitleBar"));
+    m_titleBar->setFixedHeight(44);
+    m_titleBar->installEventFilter(this);
+    auto *tb = new QHBoxLayout(m_titleBar);
+    tb->setContentsMargins(10, 6, 8, 6);
+    tb->setSpacing(8);
+
+    // 分享图标
+    auto *appIcon = new QLabel;
+    appIcon->setFixedSize(24, 24);
+    {
+        QPixmap pm(24, 24);
+        pm.fill(Qt::transparent);
+        QPainter p(&pm);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setBrush(QColor(16, 185, 129, 50));
+        p.setPen(QPen(QColor(52, 211, 153, 120), 1));
+        p.drawRoundedRect(0, 0, 23, 23, 6, 6);
+        p.setPen(QPen(QColor(52, 211, 153), 1.6));
+        p.setBrush(QColor(52, 211, 153));
+        // 简易 share 节点图
+        p.drawEllipse(QPointF(8, 7), 2.2, 2.2);
+        p.drawEllipse(QPointF(16, 7), 2.2, 2.2);
+        p.drawEllipse(QPointF(12, 16), 2.2, 2.2);
+        p.drawLine(QPointF(9.5, 8.5), QPointF(11, 14));
+        p.drawLine(QPointF(14.5, 8.5), QPointF(13, 14));
+        appIcon->setPixmap(pm);
+    }
+
     auto *appName = new QLabel(QStringLiteral("HTTP 局域网极速文件共享客户端"));
-    appName->setStyleSheet(QStringLiteral("font-size:13px;font-weight:700;"));
-    auto *ver = new QLabel(QStringLiteral("Win x64 · v1.0.0"));
-    ver->setStyleSheet(QStringLiteral("color:#94a3b8;background:#14233c;border:1px solid #1f355a;border-radius:4px;padding:2px 6px;"));
+    appName->setStyleSheet(QStringLiteral("font-size:13px;font-weight:700;color:#f8fafc;background:transparent;"));
+
+    auto *ver = new QLabel(QStringLiteral("Win11 x64 · v1.0.0"));
+    ver->setStyleSheet(QStringLiteral(
+        "color:#94a3b8;background:#14233c;border:1px solid #1f355a;border-radius:4px;"
+        "padding:2px 7px;font-size:10px;font-family:Consolas,'Cascadia Mono',monospace;"));
+
     m_uacBadge = new QLabel;
     m_uacBadge->setObjectName(QStringLiteral("Uac"));
-    tb->addWidget(appName);
-    tb->addWidget(ver);
-    tb->addWidget(m_uacBadge);
-    tb->addStretch();
+    m_uacBadge->setCursor(Qt::PointingHandCursor);
+    m_uacBadge->installEventFilter(this);
+
+    tb->addWidget(appIcon, 0, Qt::AlignVCenter);
+    tb->addWidget(appName, 0, Qt::AlignVCenter);
+    tb->addWidget(ver, 0, Qt::AlignVCenter);
+    tb->addWidget(m_uacBadge, 0, Qt::AlignVCenter);
+    tb->addStretch(1);
 
     auto *tabs = new QWidget;
-    tabs->setStyleSheet(QStringLiteral("background:#0d182b;border:1px solid #1d3153;border-radius:8px;"));
+    tabs->setObjectName(QStringLiteral("TabStrip"));
     auto *tabsLay = new QHBoxLayout(tabs);
-    tabsLay->setContentsMargins(4, 4, 4, 4);
+    tabsLay->setContentsMargins(4, 3, 4, 3);
     tabsLay->setSpacing(2);
+
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
     m_tabPortal = new QPushButton(QStringLiteral("局域网提货 Web 端"));
     m_tabLogs = new QPushButton(QStringLiteral("实时日志与监控"));
+    m_tabManager->setIcon(makeTabIcon(0, QColor(QStringLiteral("#94a3b8"))));
+    m_tabPortal->setIcon(makeTabIcon(1, QColor(QStringLiteral("#94a3b8"))));
+    m_tabLogs->setIcon(makeTabIcon(2, QColor(QStringLiteral("#94a3b8"))));
+    m_tabManager->setIconSize(QSize(14, 14));
+    m_tabPortal->setIconSize(QSize(14, 14));
+    m_tabLogs->setIconSize(QSize(14, 14));
     for (auto *b : {m_tabManager, m_tabPortal, m_tabLogs}) {
         b->setObjectName(QStringLiteral("Tab"));
-        tabsLay->addWidget(b);
+        b->setCursor(Qt::PointingHandCursor);
+        b->setFlat(true);
     }
-    m_tabManager->setObjectName(QStringLiteral("TabActive"));
-    tb->addWidget(tabs);
-    root->addWidget(titleBar);
+
+    // 运行指示点挂在控制面板按钮右侧（叠在 tab strip 内）
+    auto *managerWrap = new QWidget;
+    auto *mw = new QHBoxLayout(managerWrap);
+    mw->setContentsMargins(0, 0, 0, 0);
+    mw->setSpacing(0);
+    mw->addWidget(m_tabManager);
+    m_runDot = new QLabel;
+    m_runDot->setObjectName(QStringLiteral("RunDot"));
+    m_runDot->setVisible(false);
+    mw->addWidget(m_runDot);
+    mw->addSpacing(8);
+
+    auto *portalWrap = new QWidget;
+    auto *pw = new QHBoxLayout(portalWrap);
+    pw->setContentsMargins(0, 0, 0, 0);
+    pw->setSpacing(4);
+    pw->addWidget(m_tabPortal);
+    m_portalCount = new QLabel(QStringLiteral("0"));
+    m_portalCount->setObjectName(QStringLiteral("PortalCount"));
+    m_portalCount->setAlignment(Qt::AlignCenter);
+    m_portalCount->setFixedHeight(16);
+    pw->addWidget(m_portalCount);
+    pw->addSpacing(6);
+
+    tabsLay->addWidget(managerWrap);
+    tabsLay->addWidget(portalWrap);
+    tabsLay->addWidget(m_tabLogs);
+    tb->addWidget(tabs, 0, Qt::AlignVCenter);
+
+    auto *minBtn = new QPushButton(QStringLiteral("─"));
+    auto *maxBtn = new QPushButton(QStringLiteral("□"));
+    auto *closeBtn = new QPushButton(QStringLiteral("✕"));
+    minBtn->setObjectName(QStringLiteral("WinBtn"));
+    maxBtn->setObjectName(QStringLiteral("WinBtn"));
+    closeBtn->setObjectName(QStringLiteral("WinClose"));
+    closeBtn->setStyleSheet(QStringLiteral(
+        "QPushButton{background:transparent;border:none;border-radius:4px;color:#94a3b8;"
+        "min-width:34px;max-width:34px;min-height:26px;font-size:13px;}"
+        "QPushButton:hover{background:#e11d48;color:white;}"));
+
+    tb->addSpacing(6);
+    tb->addWidget(minBtn, 0, Qt::AlignVCenter);
+    tb->addWidget(maxBtn, 0, Qt::AlignVCenter);
+    tb->addWidget(closeBtn, 0, Qt::AlignVCenter);
+    root->addWidget(m_titleBar);
 
     connect(m_tabManager, &QPushButton::clicked, this, [this] { switchView(0); });
     connect(m_tabPortal, &QPushButton::clicked, this, [this] { switchView(1); });
     connect(m_tabLogs, &QPushButton::clicked, this, [this] { switchView(2); });
+    connect(minBtn, &QPushButton::clicked, this, &QWidget::showMinimized);
+    connect(maxBtn, &QPushButton::clicked, this, [this] {
+        if (isMaximized())
+            showNormal();
+        else
+            showMaximized();
+    });
+    connect(closeBtn, &QPushButton::clicked, this, &QWidget::close);
 
     m_stack = new QStackedWidget;
     root->addWidget(m_stack, 1);
@@ -537,16 +710,31 @@ void MainWindow::buildUi()
 void MainWindow::switchView(int index)
 {
     m_stack->setCurrentIndex(index);
+    updateTabChrome(index);
+    if (index == 1)
+        refreshFiles();
+}
+
+void MainWindow::updateTabChrome(int index)
+{
     m_tabManager->setObjectName(index == 0 ? QStringLiteral("TabActive") : QStringLiteral("Tab"));
     m_tabPortal->setObjectName(index == 1 ? QStringLiteral("TabActiveCyan") : QStringLiteral("Tab"));
     m_tabLogs->setObjectName(index == 2 ? QStringLiteral("TabActiveIndigo") : QStringLiteral("Tab"));
-    // 刷新样式
+    m_tabManager->setIcon(makeTabIcon(0, QColor(index == 0 ? QStringLiteral("#6ee7b7") : QStringLiteral("#94a3b8"))));
+    m_tabPortal->setIcon(makeTabIcon(1, QColor(index == 1 ? QStringLiteral("#67e8f9") : QStringLiteral("#94a3b8"))));
+    m_tabLogs->setIcon(makeTabIcon(2, QColor(index == 2 ? QStringLiteral("#a5b4fc") : QStringLiteral("#94a3b8"))));
     for (auto *b : {m_tabManager, m_tabPortal, m_tabLogs}) {
         b->style()->unpolish(b);
         b->style()->polish(b);
     }
-    if (index == 1)
-        refreshFiles();
+}
+
+void MainWindow::updateUacBadge()
+{
+    if (NicManager::isElevated())
+        m_uacBadge->setText(QStringLiteral("🛡  UAC 已授权"));
+    else
+        m_uacBadge->setText(QStringLiteral("🛡  标准权限"));
 }
 
 QString MainWindow::selectedIp() const
@@ -592,6 +780,8 @@ void MainWindow::setRunningUi(bool running)
     }
     m_toggleBtn->style()->unpolish(m_toggleBtn);
     m_toggleBtn->style()->polish(m_toggleBtn);
+    if (m_runDot)
+        m_runDot->setVisible(running);
     updateShareUrlUi();
 }
 
@@ -890,7 +1080,8 @@ void MainWindow::refreshFiles()
 
     m_fileStats->setText(QStringLiteral("%1 个文件 · %2").arg(shown).arg(fmtBytes(total)));
     m_priorityFileLabel->setText(priority.isEmpty() ? QStringLiteral("暂无打包产物") : priority);
-    m_tabPortal->setText(QStringLiteral("局域网提货 Web 端 %1").arg(shown));
+    if (m_portalCount)
+        m_portalCount->setText(QString::number(shown));
 }
 
 void MainWindow::uploadLocalFiles()
@@ -973,4 +1164,48 @@ void MainWindow::clearLogs()
 void MainWindow::onIpSelectionChanged(int)
 {
     updateShareUrlUi();
+}
+
+bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == m_uacBadge && event->type() == QEvent::MouseButtonRelease) {
+        updateUacBadge();
+        if (NicManager::isElevated())
+            showToast(QStringLiteral("当前已具备管理员权限"));
+        else
+            showToast(QStringLiteral("请以管理员身份重新启动以获得 UAC 权限"));
+        return true;
+    }
+
+    if (watched == m_titleBar) {
+        auto *me = static_cast<QMouseEvent *>(event);
+        if (event->type() == QEvent::MouseButtonDblClick && me->button() == Qt::LeftButton) {
+            if (isMaximized())
+                showNormal();
+            else
+                showMaximized();
+            return true;
+        }
+        if (event->type() == QEvent::MouseButtonPress && me->button() == Qt::LeftButton) {
+            QWidget *hit = m_titleBar->childAt(me->pos());
+            for (QWidget *w = hit; w && w != m_titleBar; w = w->parentWidget()) {
+                if (qobject_cast<QPushButton *>(w) || w->objectName() == QLatin1String("TabStrip")
+                    || w->objectName() == QLatin1String("PortalCount")
+                    || w->objectName() == QLatin1String("RunDot")
+                    || w->objectName() == QLatin1String("Uac"))
+                    return QMainWindow::eventFilter(watched, event);
+            }
+            m_dragging = true;
+            m_dragPos = me->globalPosition().toPoint() - frameGeometry().topLeft();
+            return true;
+        }
+        if (event->type() == QEvent::MouseMove && m_dragging) {
+            if (!isMaximized())
+                move(me->globalPosition().toPoint() - m_dragPos);
+            return true;
+        }
+        if (event->type() == QEvent::MouseButtonRelease)
+            m_dragging = false;
+    }
+    return QMainWindow::eventFilter(watched, event);
 }

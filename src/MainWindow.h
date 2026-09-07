@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QMainWindow>
-#include <QPointer>
+#include <QPoint>
 
 class HttpFileServer;
 class ActivityLogModel;
@@ -15,7 +15,7 @@ class QTableWidget;
 class QListWidget;
 class QStackedWidget;
 class QFileSystemWatcher;
-class QCheckBox;
+class QWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -23,6 +23,9 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
+
+protected:
+    bool eventFilter(QObject *watched, QEvent *event) override;
 
 private slots:
     void toggleServer();
@@ -52,6 +55,8 @@ private:
     void addLog(const QString &type, const QString &msg);
     void updateShareUrlUi();
     void showToast(const QString &msg);
+    void updateTabChrome(int index);
+    void updateUacBadge();
     QString currentShareUrl() const;
     QString selectedIp() const;
     QString adapterNameForIp(const QString &ip) const;
@@ -61,12 +66,17 @@ private:
     ActivityLogModel *m_logs = nullptr;
     QFileSystemWatcher *m_watcher = nullptr;
 
+    QWidget *m_titleBar = nullptr;
     QStackedWidget *m_stack = nullptr;
     QPushButton *m_tabManager = nullptr;
     QPushButton *m_tabPortal = nullptr;
     QPushButton *m_tabLogs = nullptr;
+    QLabel *m_runDot = nullptr;
+    QLabel *m_portalCount = nullptr;
 
     QLabel *m_uacBadge = nullptr;
+    QPoint m_dragPos;
+    bool m_dragging = false;
     QLabel *m_statusPill = nullptr;
     QPushButton *m_toggleBtn = nullptr;
     QLineEdit *m_folderEdit = nullptr;
