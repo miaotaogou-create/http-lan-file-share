@@ -1,4 +1,6 @@
 <RCC>
   <qresource prefix="/">
+    <file>icons/shield_check.svg</file>
+    <file>icons/shield_off.svg</file>
   </qresource>
 </RCC>

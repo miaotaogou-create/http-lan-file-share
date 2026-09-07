@@ -12,6 +12,7 @@
 #    define NOMINMAX
 #  endif
 #  include <windows.h>
+#  include <shellapi.h>
 #endif
 
 static QString prefixToMask(int prefix)
@@ -104,6 +105,35 @@ bool NicManager::isElevated()
     }
     return elev == TRUE;
 #else
+    return false;
+#endif
+}
+
+bool NicManager::requestElevation(QString *err)
+{
+#ifdef Q_OS_WIN
+    wchar_t path[MAX_PATH] = {};
+    if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) {
+        if (err)
+            *err = QStringLiteral("无法获取程序路径");
+        return false;
+    }
+    // ShellExecuteW runas → 系统 UAC 对话框；用户同意后以管理员启动新实例
+    const HINSTANCE h = ShellExecuteW(nullptr, L"runas", path, nullptr, nullptr, SW_SHOWNORMAL);
+    const auto code = reinterpret_cast<intptr_t>(h);
+    if (code <= 32) {
+        if (err) {
+            if (code == ERROR_CANCELLED)
+                *err = QStringLiteral("已取消 UAC 授权");
+            else
+                *err = QStringLiteral("提权失败，错误码 %1").arg(code);
+        }
+        return false;
+    }
+    return true;
+#else
+    if (err)
+        *err = QStringLiteral("仅 Windows 支持 UAC 提权");
     return false;
 #endif
 }

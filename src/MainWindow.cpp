@@ -7,6 +7,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QCoreApplication>
 #include <QComboBox>
 #include <QDesktopServices>
 #include <QEvent>
@@ -28,6 +29,7 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
+#include <QSvgRenderer>
 #include <QPainter>
 #include <QPushButton>
 #include <QSpinBox>
@@ -274,8 +276,17 @@ QLabel#Uac {
   background: rgba(120,53,15,0.45);
   border: 1px solid rgba(245,158,11,0.55);
   border-radius: 6px;
-  padding: 3px 9px;
+  padding: 2px 9px 2px 6px;
   color: #fcd34d;
+  font-size: 11px;
+  font-weight: 600;
+}
+QLabel#UacOff {
+  background: rgba(30,41,59,0.8);
+  border: 1px solid #475569;
+  border-radius: 6px;
+  padding: 2px 9px 2px 6px;
+  color: #94a3b8;
   font-size: 11px;
   font-weight: 600;
 }
@@ -375,19 +386,14 @@ void MainWindow::buildUi()
     auto *appName = new QLabel(QStringLiteral("HTTP 局域网极速文件共享客户端"));
     appName->setStyleSheet(QStringLiteral("font-size:13px;font-weight:700;color:#f8fafc;background:transparent;"));
 
-    auto *ver = new QLabel(QStringLiteral("Win11 x64 · v1.0.0"));
-    ver->setStyleSheet(QStringLiteral(
-        "color:#94a3b8;background:#14233c;border:1px solid #1f355a;border-radius:4px;"
-        "padding:2px 7px;font-size:10px;font-family:Consolas,'Cascadia Mono',monospace;"));
-
     m_uacBadge = new QLabel;
-    m_uacBadge->setObjectName(QStringLiteral("Uac"));
+    m_uacBadge->setObjectName(QStringLiteral("UacOff"));
     m_uacBadge->setCursor(Qt::PointingHandCursor);
+    m_uacBadge->setToolTip(QStringLiteral("点击可请求管理员权限（真实 Windows UAC）"));
     m_uacBadge->installEventFilter(this);
 
     tb->addWidget(appIcon, 0, Qt::AlignVCenter);
     tb->addWidget(appName, 0, Qt::AlignVCenter);
-    tb->addWidget(ver, 0, Qt::AlignVCenter);
     tb->addWidget(m_uacBadge, 0, Qt::AlignVCenter);
     tb->addStretch(1);
 
@@ -773,10 +779,24 @@ void MainWindow::updateTabChrome(int index)
 
 void MainWindow::updateUacBadge()
 {
-    if (NicManager::isElevated())
-        m_uacBadge->setText(QStringLiteral("🛡  UAC 已授权"));
-    else
-        m_uacBadge->setText(QStringLiteral("🛡  标准权限"));
+    const bool elevated = NicManager::isElevated();
+    QSvgRenderer renderer(QString(elevated ? QStringLiteral(":/icons/shield_check.svg")
+                                           : QStringLiteral(":/icons/shield_off.svg")));
+    QPixmap pm(16, 16);
+    pm.fill(Qt::transparent);
+    {
+        QPainter p(&pm);
+        p.setRenderHint(QPainter::Antialiasing);
+        renderer.render(&p, QRectF(0, 0, 16, 16));
+    }
+
+    m_uacBadge->setPixmap(pm);
+    m_uacBadge->setObjectName(elevated ? QStringLiteral("Uac") : QStringLiteral("UacOff"));
+    m_uacBadge->setText(elevated ? QStringLiteral("  UAC 已授权") : QStringLiteral("  UAC 未授权 · 点击提权"));
+    m_uacBadge->setToolTip(elevated ? QStringLiteral("当前进程已通过 Windows UAC 提权（TokenElevation=1）")
+                                    : QStringLiteral("当前为标准权限。点击将弹出系统 UAC，同意后以管理员重启。"));
+    m_uacBadge->style()->unpolish(m_uacBadge);
+    m_uacBadge->style()->polish(m_uacBadge);
 }
 
 QString MainWindow::selectedIp() const
@@ -1211,11 +1231,26 @@ void MainWindow::onIpSelectionChanged(int)
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
     if (watched == m_uacBadge && event->type() == QEvent::MouseButtonRelease) {
-        updateUacBadge();
-        if (NicManager::isElevated())
-            showToast(QStringLiteral("当前已具备管理员权限"));
-        else
-            showToast(QStringLiteral("请以管理员身份重新启动以获得 UAC 权限"));
+        if (NicManager::isElevated()) {
+            updateUacBadge();
+            showToast(QStringLiteral("当前已是管理员权限（真实 UAC 状态）"));
+            return true;
+        }
+        const auto ret = QMessageBox::question(
+            this, QStringLiteral("请求管理员权限"),
+            QStringLiteral("追加/解绑网卡 IP 需要管理员权限。\n"
+                           "将弹出 Windows UAC 对话框，同意后以管理员身份重新启动本程序。\n\n"
+                           "是否继续？"));
+        if (ret != QMessageBox::Yes)
+            return true;
+        QString err;
+        if (NicManager::requestElevation(&err)) {
+            // 新的管理员实例已启动，退出当前标准权限进程
+            QTimer::singleShot(0, qApp, &QCoreApplication::quit);
+        } else {
+            showToast(err.isEmpty() ? QStringLiteral("提权失败") : err);
+            updateUacBadge();
+        }
         return true;
     }
 
