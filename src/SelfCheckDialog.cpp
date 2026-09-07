@@ -4,6 +4,9 @@
 #include <QFrame>
 #include <QIcon>
 #include <QHBoxLayout>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QLabel>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -267,7 +270,7 @@ QScrollArea > QWidget > QWidget { background: transparent; }
     m_spinLabel = new QLabel;
     m_spinLabel->setFixedSize(28, 28);
     m_spinLabel->setAlignment(Qt::AlignCenter);
-    auto *loadingText = new QLabel(QStringLiteral("正在对网络端口、网关、回环与防火墙进行快速自检..."));
+    auto *loadingText = new QLabel(QStringLiteral("正在对网络端口、回环与入站可达性进行快速自检..."));
     loadingText->setObjectName(QStringLiteral("LoadingText"));
     loadingText->setAlignment(Qt::AlignCenter);
     ll->addWidget(m_spinLabel, 0, Qt::AlignHCenter);
@@ -465,15 +468,19 @@ void SelfCheckDialog::runCheck()
         return;
     }
 
-    // 运行中：并行探测回环与局域网地址
+    // 运行中：并行探测回环、局域网与 Range
     struct State {
-        int left = 2;
+        int left = 3;
         int loopMs = -1;
         int lanMs = -1;
+        int rangeMs = -1;
         bool loopOk = false;
         bool lanOk = false;
+        bool rangeOk = false;
         int loopCode = 0;
         int lanCode = 0;
+        int rangeCode = 0;
+        QString rangeDetail;
     };
     auto st = QSharedPointer<State>::create();
 
@@ -508,20 +515,25 @@ void SelfCheckDialog::runCheck()
                           QStringLiteral("warning"), st->lanMs});
         }
 
-        // 防火墙：局域网本机探测成功则视为入站基本可用
+        // 诚实表述：只根据本机探测推断，未查询防火墙规则库
         if (st->lanOk) {
-            items.append({QStringLiteral("Windows Defender 防火墙入站规则"),
-                          QStringLiteral("检测到本地开发端口 %1 入站规则放行，无拦截。").arg(m_port),
+            items.append({QStringLiteral("入站可达性（防火墙启发式）"),
+                          QStringLiteral("本机经局域网 IP 访问端口 %1 成功；未直接查询 Windows 防火墙规则，"
+                                         "若他机仍不通请手动放行 TCP %1。")
+                              .arg(m_port),
                           QStringLiteral("ok"), -1});
         } else {
-            items.append({QStringLiteral("Windows Defender 防火墙入站规则"),
+            items.append({QStringLiteral("入站可达性（防火墙启发式）"),
                           QStringLiteral("局域网地址探测失败，请在防火墙中放行 TCP %1 入站。").arg(m_port),
                           QStringLiteral("warning"), -1});
         }
 
-        items.append({QStringLiteral("HTTP 断点续传 (Range) 与文件上传能力"),
-                      QStringLiteral("支持 Content-Range 分片下载及 multipart/form-data 快速上传。"),
-                      QStringLiteral("ok"), -1});
+        items.append({QStringLiteral("HTTP 断点续传 (Range) 与文件上传"),
+                      st->rangeDetail.isEmpty()
+                          ? QStringLiteral("Range 探测未完成")
+                          : st->rangeDetail,
+                      st->rangeOk ? QStringLiteral("ok") : QStringLiteral("warning"),
+                      st->rangeMs});
 
         finishChecks(items);
     };
@@ -558,4 +570,65 @@ void SelfCheckDialog::runCheck()
         --st->left;
         tryFinish();
     });
+
+    // Range：先拉文件列表，有文件则请求 bytes=0-0 期望 206
+    {
+        auto *nam = new QNetworkAccessManager(this);
+        QNetworkRequest listReq(QUrl(QStringLiteral("http://127.0.0.1:%1/api/files").arg(m_port)));
+        listReq.setTransferTimeout(3000);
+        auto *timer = new QElapsedTimer;
+        timer->start();
+        auto *listReply = nam->get(listReq);
+        connect(listReply, &QNetworkReply::finished, this, [this, nam, listReply, timer, st, tryFinish] {
+            const auto finishRange = [st, tryFinish, timer](bool ok, int code, const QString &detail) {
+                st->rangeOk = ok;
+                st->rangeCode = code;
+                st->rangeMs = static_cast<int>(timer->elapsed());
+                st->rangeDetail = detail;
+                delete timer;
+                --st->left;
+                tryFinish();
+            };
+
+            if (listReply->error() != QNetworkReply::NoError) {
+                listReply->deleteLater();
+                nam->deleteLater();
+                finishRange(false, 0, QStringLiteral("无法获取 /api/files，跳过 Range 实测。"));
+                return;
+            }
+            const QJsonDocument doc = QJsonDocument::fromJson(listReply->readAll());
+            listReply->deleteLater();
+            const QJsonArray arr = doc.array();
+            if (arr.isEmpty()) {
+                nam->deleteLater();
+                finishRange(true, 200,
+                            QStringLiteral("服务已实现 bytes Range / 206；当前共享目录无文件，未做分片实测。"
+                                           "上传上限 512MB（multipart）。"));
+                return;
+            }
+            const QString name = arr.at(0).toObject().value(QStringLiteral("name")).toString();
+            QNetworkRequest rangeReq(QUrl(QStringLiteral("http://127.0.0.1:%1/download/%2")
+                                              .arg(m_port)
+                                              .arg(QString::fromUtf8(QUrl::toPercentEncoding(name)))));
+            rangeReq.setRawHeader("Range", "bytes=0-0");
+            rangeReq.setTransferTimeout(3000);
+            auto *rangeReply = nam->get(rangeReq);
+            connect(rangeReply, &QNetworkReply::finished, this, [nam, rangeReply, finishRange, name] {
+                const int code = rangeReply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+                const bool ok = (code == 206);
+                const QString cr = QString::fromLatin1(rangeReply->rawHeader("Content-Range"));
+                rangeReply->deleteLater();
+                nam->deleteLater();
+                if (ok) {
+                    finishRange(true, code,
+                                QStringLiteral("对 %1 发送 Range: bytes=0-0 -> HTTP 206，Content-Range: %2；"
+                                               "支持断点续传。上传为 multipart，上限 512MB。")
+                                    .arg(name, cr.isEmpty() ? QStringLiteral("(已返回)") : cr));
+                } else {
+                    finishRange(false, code,
+                                QStringLiteral("Range 探测未返回 206（实际 %1），断点续传可能异常。").arg(code));
+                }
+            });
+        });
+    }
 }

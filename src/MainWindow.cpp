@@ -2069,10 +2069,27 @@ void MainWindow::addNicIp()
     }
     const QString ip = m_newIpEdit->text().trimmed();
     const QString mask = m_newMaskEdit->text().trimmed();
+    const QHostAddress ipAddr(ip);
+    const QHostAddress maskAddr(mask);
+    if (ipAddr.protocol() != QAbstractSocket::IPv4Protocol) {
+        showToast(QStringLiteral("请输入合法的 IPv4 地址"));
+        return;
+    }
+    if (maskAddr.protocol() != QAbstractSocket::IPv4Protocol) {
+        showToast(QStringLiteral("请输入合法的子网掩码（IPv4）"));
+        return;
+    }
     const QString adapter = adapterNameForIp(selectedIp());
     if (adapter.isEmpty()) {
         showToast(QStringLiteral("未找到可用网卡"));
         return;
+    }
+    // 重复 IP 本地拦截
+    for (const auto &n : NicManager::enumerate()) {
+        if (n.ip == ip) {
+            showToast(QStringLiteral("该 IP 已在网卡列表中: %1").arg(ip));
+            return;
+        }
     }
     QString err;
     if (!NicManager::addAddress(adapter, ip, mask, &err)) {
@@ -2334,20 +2351,22 @@ QWidget *MainWindow::makeFileNameCell(const QString &fileName)
         "color:#F1F5F9;font-size:13px;font-weight:500;background:transparent;"));
     name->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
-    auto *badge = new QLabel(QStringLiteral("Build"));
-    badge->setStyleSheet(QStringLiteral(
-        "QLabel {"
-        "  background-color:#111E30;"
-        "  color:#94A3B8;"
-        "  font-size:11px;"
-        "  border:1px solid #1E3A5F;"
-        "  border-radius:4px;"
-        "  padding:1px 6px;"
-        "}"));
-
     lay->addWidget(icon, 0, Qt::AlignVCenter);
     lay->addWidget(name, 0, Qt::AlignVCenter);
-    lay->addWidget(badge, 0, Qt::AlignVCenter);
+    // 仅压缩包/产物显示 Build 徽章，避免普通文件误标
+    if (isArchiveName(fileName)) {
+        auto *badge = new QLabel(QStringLiteral("Build"));
+        badge->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            "  background-color:#111E30;"
+            "  color:#94A3B8;"
+            "  font-size:11px;"
+            "  border:1px solid #1E3A5F;"
+            "  border-radius:4px;"
+            "  padding:1px 6px;"
+            "}"));
+        lay->addWidget(badge, 0, Qt::AlignVCenter);
+    }
     lay->addStretch(1);
     return w;
 }
@@ -2519,11 +2538,12 @@ void MainWindow::copyCurlForSelected()
 
 void MainWindow::copyCurlForName(const QString &name)
 {
-    const QString cmd = QStringLiteral("curl -O \"%1/download/%2\"")
+    const QString url = QStringLiteral("%1/download/%2")
                             .arg(currentShareUrl(), QString::fromUtf8(QUrl::toPercentEncoding(name)));
+    const QString cmd = QStringLiteral("curl -O \"%1\"\nwget -O \"%2\" \"%1\"").arg(url, name);
     QApplication::clipboard()->setText(cmd);
-    addLog(QStringLiteral("check"), QStringLiteral("已复制 curl: %1").arg(cmd));
-    showToast(QStringLiteral("已复制 curl 命令"));
+    addLog(QStringLiteral("check"), QStringLiteral("已复制 curl/wget: %1").arg(url));
+    showToast(QStringLiteral("已复制 curl / wget 命令"));
 }
 
 void MainWindow::clearLogs()

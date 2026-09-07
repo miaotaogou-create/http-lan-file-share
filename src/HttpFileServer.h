@@ -48,12 +48,15 @@ private:
     void handleRequest(QTcpSocket *sock, ConnState &st);
     void sendResponse(QTcpSocket *sock, int code, const QByteArray &contentType,
                       const QByteArray &body, const QList<QPair<QByteArray, QByteArray>> &extra = {});
-    void sendFile(QTcpSocket *sock, const QString &absPath, const QString &clientIp);
+    void sendFile(QTcpSocket *sock, const QString &absPath, const QString &clientIp,
+                  const QHash<QString, QString> &reqHeaders, bool headOnly);
     void handleUpload(QTcpSocket *sock, ConnState &st, const QString &clientIp);
     QByteArray buildPortalHtml() const;
     QString safeJoin(const QString &name) const;
     static QByteArray guessMime(const QString &name);
     static QString decodePath(const QString &raw);
+    static bool parseBytesRange(const QString &rangeHeader, qint64 fileSize,
+                                qint64 *outStart, qint64 *outEnd);
 
     QTcpServer m_server;
     QString m_rootDir;

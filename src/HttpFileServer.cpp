@@ -161,6 +161,13 @@ void HttpFileServer::onReadyRead()
         st.body.append(sock->readAll());
     }
 
+    if (st.method == QLatin1String("POST") && st.contentLength > 0
+        && st.contentLength > (512LL * 1024 * 1024)) {
+        sendResponse(sock, 413, "text/plain; charset=utf-8", "upload too large (max 512MB)");
+        m_conns.remove(sock);
+        return;
+    }
+
     if (st.method == QLatin1String("POST") && st.body.size() < st.contentLength)
         return;
 
@@ -214,19 +221,32 @@ void HttpFileServer::sendResponse(QTcpSocket *sock, int code, const QByteArray &
                                   const QList<QPair<QByteArray, QByteArray>> &extra)
 {
     QByteArray reason = "OK";
-    if (code == 400)
+    if (code == 206)
+        reason = "Partial Content";
+    else if (code == 400)
         reason = "Bad Request";
     else if (code == 404)
         reason = "Not Found";
     else if (code == 405)
         reason = "Method Not Allowed";
+    else if (code == 413)
+        reason = "Payload Too Large";
+    else if (code == 416)
+        reason = "Range Not Satisfiable";
     else if (code == 500)
         reason = "Internal Server Error";
+
+    bool hasContentLength = false;
+    for (const auto &p : extra) {
+        if (p.first.compare("Content-Length", Qt::CaseInsensitive) == 0)
+            hasContentLength = true;
+    }
 
     QByteArray resp;
     resp += "HTTP/1.1 " + QByteArray::number(code) + ' ' + reason + "\r\n";
     resp += "Content-Type: " + contentType + "\r\n";
-    resp += "Content-Length: " + QByteArray::number(body.size()) + "\r\n";
+    if (!hasContentLength)
+        resp += "Content-Length: " + QByteArray::number(body.size()) + "\r\n";
     resp += "Connection: close\r\n";
     resp += "Access-Control-Allow-Origin: *\r\n";
     for (const auto &p : extra)
@@ -237,20 +257,125 @@ void HttpFileServer::sendResponse(QTcpSocket *sock, int code, const QByteArray &
     sock->disconnectFromHost();
 }
 
-void HttpFileServer::sendFile(QTcpSocket *sock, const QString &absPath, const QString &clientIp)
+bool HttpFileServer::parseBytesRange(const QString &rangeHeader, qint64 fileSize,
+                                     qint64 *outStart, qint64 *outEnd)
+{
+    if (!outStart || !outEnd || fileSize <= 0)
+        return false;
+    // 只支持单段：bytes=START-END / bytes=START- / bytes=-SUFFIX
+    if (!rangeHeader.startsWith(QLatin1String("bytes="), Qt::CaseInsensitive))
+        return false;
+    const QString spec = rangeHeader.mid(6).trimmed();
+    if (spec.contains(','))
+        return false; // 多段不实现
+    const int dash = spec.indexOf('-');
+    if (dash < 0)
+        return false;
+    const QString left = spec.left(dash).trimmed();
+    const QString right = spec.mid(dash + 1).trimmed();
+    qint64 start = 0;
+    qint64 end = fileSize - 1;
+    if (left.isEmpty()) {
+        // bytes=-N：最后 N 字节
+        bool ok = false;
+        const qint64 suffix = right.toLongLong(&ok);
+        if (!ok || suffix <= 0)
+            return false;
+        start = qMax(qint64(0), fileSize - suffix);
+    } else {
+        bool okS = false;
+        start = left.toLongLong(&okS);
+        if (!okS || start < 0 || start >= fileSize)
+            return false;
+        if (!right.isEmpty()) {
+            bool okE = false;
+            end = right.toLongLong(&okE);
+            if (!okE || end < start)
+                return false;
+            end = qMin(end, fileSize - 1);
+        }
+    }
+    *outStart = start;
+    *outEnd = end;
+    return true;
+}
+
+void HttpFileServer::sendFile(QTcpSocket *sock, const QString &absPath, const QString &clientIp,
+                              const QHash<QString, QString> &reqHeaders, bool headOnly)
 {
     QFile f(absPath);
     if (!f.open(QIODevice::ReadOnly)) {
         sendResponse(sock, 404, "text/plain; charset=utf-8", "file not found");
         return;
     }
-    const QByteArray data = f.readAll();
     const QFileInfo fi(absPath);
+    const qint64 total = fi.size();
+    qint64 start = 0;
+    qint64 end = total > 0 ? total - 1 : 0;
+    int code = 200;
+    const QString rangeHdr = reqHeaders.value(QStringLiteral("range"));
+    if (!rangeHdr.isEmpty() && total > 0) {
+        if (!parseBytesRange(rangeHdr, total, &start, &end)) {
+            sendResponse(sock, 416, "text/plain; charset=utf-8", "invalid range",
+                         {{"Content-Range", "bytes */" + QByteArray::number(total)}});
+            return;
+        }
+        code = 206;
+    }
+    const qint64 length = (total == 0) ? 0 : (end - start + 1);
+
     QList<QPair<QByteArray, QByteArray>> extra;
+    extra.append({QByteArray("Accept-Ranges"), QByteArray("bytes")});
+    extra.append({QByteArray("Content-Length"), QByteArray::number(length)});
     extra.append({QByteArray("Content-Disposition"),
                   QByteArray("attachment; filename=\"") + fi.fileName().toUtf8() + '"'});
-    sendResponse(sock, 200, guessMime(fi.fileName()), data, extra);
-    emit clientDownload(clientIp, fi.fileName(), fi.size());
+    if (code == 206) {
+        extra.append({QByteArray("Content-Range"),
+                      QByteArray("bytes ") + QByteArray::number(start) + '-'
+                          + QByteArray::number(end) + '/' + QByteArray::number(total)});
+    }
+
+    QByteArray reason = (code == 206) ? "Partial Content" : "OK";
+    QByteArray hdr;
+    hdr += "HTTP/1.1 " + QByteArray::number(code) + ' ' + reason + "\r\n";
+    hdr += "Content-Type: " + guessMime(fi.fileName()) + "\r\n";
+    hdr += "Connection: close\r\n";
+    hdr += "Access-Control-Allow-Origin: *\r\n";
+    for (const auto &p : extra)
+        hdr += p.first + ": " + p.second + "\r\n";
+    hdr += "\r\n";
+    sock->write(hdr);
+
+    if (!headOnly && length > 0) {
+        if (!f.seek(start)) {
+            sock->disconnectFromHost();
+            return;
+        }
+        qint64 remaining = length;
+        QByteArray buf;
+        buf.resize(64 * 1024);
+        while (remaining > 0) {
+            const qint64 toRead = qMin(remaining, qint64(buf.size()));
+            const qint64 n = f.read(buf.data(), toRead);
+            if (n <= 0)
+                break;
+            qint64 written = 0;
+            while (written < n) {
+                const qint64 w = sock->write(buf.constData() + written, n - written);
+                if (w < 0)
+                    break;
+                written += w;
+                if (sock->bytesToWrite() > 256 * 1024)
+                    sock->waitForBytesWritten(30000);
+            }
+            remaining -= n;
+            if (sock->state() != QAbstractSocket::ConnectedState)
+                break;
+        }
+    }
+
+    sock->disconnectFromHost();
+    emit clientDownload(clientIp, fi.fileName(), length);
 }
 
 void HttpFileServer::handleUpload(QTcpSocket *sock, ConnState &st, const QString &clientIp)
@@ -398,7 +523,8 @@ const host = location.origin;
 document.getElementById('wget').textContent = 'wget "'+host+'/download/example.bin" -O "example.bin"';
 document.getElementById('curl').textContent = 'curl -O "'+host+'/download/example.bin"';
 function copyCurl(name){
-  const cmd = 'curl -O "'+host+'/download/'+encodeURIComponent(name)+'"';
+  const url = host+'/download/'+encodeURIComponent(name);
+  const cmd = 'curl -O "'+url+'"\\nwget -O "'+name+'" "'+url+'"';
   navigator.clipboard.writeText(cmd);
 }
 function filterFiles(){
@@ -429,8 +555,9 @@ void HttpFileServer::handleRequest(QTcpSocket *sock, ConnState &st)
 
     if (st.method == QLatin1String("OPTIONS")) {
         sendResponse(sock, 200, "text/plain", {},
-                     {{"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
-                      {"Access-Control-Allow-Headers", "Content-Type"}});
+                     {{"Access-Control-Allow-Methods", "GET, HEAD, POST, OPTIONS"},
+                      {"Access-Control-Allow-Headers", "Content-Type, Range"},
+                      {"Access-Control-Expose-Headers", "Content-Range, Accept-Ranges, Content-Length"}});
         return;
     }
 
@@ -461,13 +588,7 @@ void HttpFileServer::handleRequest(QTcpSocket *sock, ConnState &st)
                 sendResponse(sock, 404, "text/plain; charset=utf-8", "not found");
                 return;
             }
-            if (st.method == QLatin1String("HEAD")) {
-                QFileInfo fi(abs);
-                sendResponse(sock, 200, guessMime(fi.fileName()), {},
-                             {{"Content-Length", QByteArray::number(fi.size())}});
-                return;
-            }
-            sendFile(sock, abs, clientIp);
+            sendFile(sock, abs, clientIp, st.headers, st.method == QLatin1String("HEAD"));
             return;
         }
         // 直接按文件名访问
@@ -475,13 +596,7 @@ void HttpFileServer::handleRequest(QTcpSocket *sock, ConnState &st)
         name = QUrl::fromPercentEncoding(name.toUtf8());
         const QString abs = safeJoin(QFileInfo(name).fileName());
         if (!abs.isEmpty() && QFileInfo::exists(abs)) {
-            if (st.method == QLatin1String("HEAD")) {
-                QFileInfo fi(abs);
-                sendResponse(sock, 200, guessMime(fi.fileName()), {},
-                             {{"Content-Length", QByteArray::number(fi.size())}});
-                return;
-            }
-            sendFile(sock, abs, clientIp);
+            sendFile(sock, abs, clientIp, st.headers, st.method == QLatin1String("HEAD"));
             return;
         }
         sendResponse(sock, 404, "text/plain; charset=utf-8", "not found");
