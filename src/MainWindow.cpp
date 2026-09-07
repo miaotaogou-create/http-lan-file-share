@@ -56,6 +56,51 @@ static QString fmtBytes(qint64 n)
     return QString::number(v, 'f', i == 0 ? 0 : 1) + QLatin1Char(' ') + QLatin1String(u[i]);
 }
 
+static QIcon makeWinChromeIcon(int kind)
+{
+    // 0 最小化  1 最大化  2 关闭 — 对齐 Win11 线框风格
+    QPixmap pm(46, 32);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, false);
+    const QColor c(203, 213, 225); // slate-300
+    p.setPen(QPen(c, 1));
+    if (kind == 0) {
+        p.drawLine(17, 16, 29, 16);
+    } else if (kind == 1) {
+        p.drawRect(17, 10, 12, 12);
+    } else {
+        p.drawLine(17, 10, 29, 22);
+        p.drawLine(29, 10, 17, 22);
+    }
+    return QIcon(pm);
+}
+
+static QToolButton *makeWinChromeBtn(QWidget *parent, int kind)
+{
+    auto *b = new QToolButton(parent);
+    b->setIcon(makeWinChromeIcon(kind));
+    b->setIconSize(QSize(46, 32));
+    b->setFixedSize(46, 32);
+    b->setAutoRaise(true);
+    b->setCursor(Qt::ArrowCursor);
+    b->setFocusPolicy(Qt::NoFocus);
+    if (kind == 2) {
+        b->setObjectName(QStringLiteral("WinClose"));
+        b->setStyleSheet(QStringLiteral(
+            "QToolButton{background:transparent;border:none;padding:0;margin:0;}"
+            "QToolButton:hover{background:#e81123;}"
+            "QToolButton:pressed{background:#f1707a;}"));
+    } else {
+        b->setObjectName(QStringLiteral("WinBtn"));
+        b->setStyleSheet(QStringLiteral(
+            "QToolButton{background:transparent;border:none;padding:0;margin:0;}"
+            "QToolButton:hover{background:#1e293b;}"
+            "QToolButton:pressed{background:#334155;}"));
+    }
+    return b;
+}
+
 static QIcon makeTabIcon(int kind, const QColor &color)
 {
     QPixmap pm(16, 16);
@@ -253,21 +298,14 @@ QWidget#TabStrip {
 QPushButton#WinBtn {
   background: transparent;
   border: none;
-  border-radius: 4px;
-  color: #94a3b8;
-  font-size: 13px;
   padding: 0;
-  min-width: 34px;
-  max-width: 34px;
-  min-height: 26px;
+  margin: 0;
 }
-QPushButton#WinBtn:hover {
-  background: #1e293b;
-  color: #e2e8f0;
-}
-QPushButton#WinClose:hover {
-  background: #e11d48;
-  color: white;
+QToolButton#WinBtn, QToolButton#WinClose {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
 }
 QLabel#PortalCount {
   background: #1e293b;
@@ -403,34 +441,38 @@ void MainWindow::buildUi()
     tabsLay->addWidget(m_tabLogs);
     tb->addWidget(tabs, 0, Qt::AlignVCenter);
 
-    auto *minBtn = new QPushButton(QStringLiteral("─"));
-    auto *maxBtn = new QPushButton(QStringLiteral("□"));
-    auto *closeBtn = new QPushButton(QStringLiteral("✕"));
-    minBtn->setObjectName(QStringLiteral("WinBtn"));
-    maxBtn->setObjectName(QStringLiteral("WinBtn"));
-    closeBtn->setObjectName(QStringLiteral("WinClose"));
-    closeBtn->setStyleSheet(QStringLiteral(
-        "QPushButton{background:transparent;border:none;border-radius:4px;color:#94a3b8;"
-        "min-width:34px;max-width:34px;min-height:26px;font-size:13px;}"
-        "QPushButton:hover{background:#e11d48;color:white;}"));
+    auto *minBtn = makeWinChromeBtn(m_titleBar, 0);
+    auto *maxBtn = makeWinChromeBtn(m_titleBar, 1);
+    auto *closeBtn = makeWinChromeBtn(m_titleBar, 2);
 
-    tb->addSpacing(6);
-    tb->addWidget(minBtn, 0, Qt::AlignVCenter);
-    tb->addWidget(maxBtn, 0, Qt::AlignVCenter);
-    tb->addWidget(closeBtn, 0, Qt::AlignVCenter);
+    // 贴右、等高、零间距，贴近 Win11 标题栏窗控
+    auto *chrome = new QWidget;
+    chrome->setFixedHeight(32);
+    auto *chromeLay = new QHBoxLayout(chrome);
+    chromeLay->setContentsMargins(0, 0, 0, 0);
+    chromeLay->setSpacing(0);
+    chromeLay->addWidget(minBtn);
+    chromeLay->addWidget(maxBtn);
+    chromeLay->addWidget(closeBtn);
+    tb->addSpacing(8);
+    tb->addWidget(chrome, 0, Qt::AlignVCenter);
     root->addWidget(m_titleBar);
 
     connect(m_tabManager, &QPushButton::clicked, this, [this] { switchView(0); });
     connect(m_tabPortal, &QPushButton::clicked, this, [this] { switchView(1); });
     connect(m_tabLogs, &QPushButton::clicked, this, [this] { switchView(2); });
-    connect(minBtn, &QPushButton::clicked, this, &QWidget::showMinimized);
-    connect(maxBtn, &QPushButton::clicked, this, [this] {
-        if (isMaximized())
+    connect(minBtn, &QToolButton::clicked, this, &QWidget::showMinimized);
+    connect(maxBtn, &QToolButton::clicked, this, [this, maxBtn] {
+        if (isMaximized()) {
             showNormal();
-        else
+            maxBtn->setIcon(makeWinChromeIcon(1));
+        } else {
             showMaximized();
+            // 还原态画成双框感：仍用方框即可
+            maxBtn->setIcon(makeWinChromeIcon(1));
+        }
     });
-    connect(closeBtn, &QPushButton::clicked, this, &QWidget::close);
+    connect(closeBtn, &QToolButton::clicked, this, &QWidget::close);
 
     m_stack = new QStackedWidget;
     root->addWidget(m_stack, 1);
@@ -1189,7 +1231,8 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
         if (event->type() == QEvent::MouseButtonPress && me->button() == Qt::LeftButton) {
             QWidget *hit = m_titleBar->childAt(me->pos());
             for (QWidget *w = hit; w && w != m_titleBar; w = w->parentWidget()) {
-                if (qobject_cast<QPushButton *>(w) || w->objectName() == QLatin1String("TabStrip")
+                if (qobject_cast<QPushButton *>(w) || qobject_cast<QToolButton *>(w)
+                    || w->objectName() == QLatin1String("TabStrip")
                     || w->objectName() == QLatin1String("PortalCount")
                     || w->objectName() == QLatin1String("RunDot")
                     || w->objectName() == QLatin1String("Uac"))
