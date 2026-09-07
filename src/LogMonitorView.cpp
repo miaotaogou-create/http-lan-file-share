@@ -1,5 +1,6 @@
 #include "LogMonitorView.h"
 
+#include <QApplication>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -75,74 +76,69 @@ QString toRichMessage(const QString &message)
     return QStringLiteral("<span style='color:#E2E8F0;'>%1</span>").arg(out);
 }
 
-// 行内事件图标：按参考 24x24 坐标手绘（下载/电源/脉冲/盾牌）
-QPixmap makeTypeIcon(const QString &type, int size)
+// 内嵌 SVG（纯 ASCII），避免资源编码踩坑；按 DPR 出图，高分屏不糊
+QPixmap renderInlineSvg(const QByteArray &svg, int logicalSize)
 {
-    QPixmap pm(size, size);
+    QSvgRenderer renderer(svg);
+    if (!renderer.isValid())
+        return {};
+    const qreal dpr = qApp ? qApp->devicePixelRatio() : 1.0;
+    const int px = qMax(1, qRound(logicalSize * dpr));
+    QPixmap pm(px, px);
     pm.fill(Qt::transparent);
+    pm.setDevicePixelRatio(dpr);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
-
-    const qreal scale = size / 24.0;
-    p.translate(0, 0);
-    p.scale(scale, scale);
-
-    auto penOf = [](const QColor &c, qreal w) {
-        return QPen(c, w, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin);
-    };
-
-    if (type == QLatin1String("download")) {
-        p.setPen(penOf(QColor(16, 185, 129), 2.5));
-        p.setBrush(Qt::NoBrush);
-        p.drawLine(QPointF(12.0, 3.0), QPointF(12.0, 15.0));
-        p.drawLine(QPointF(12.0, 15.0), QPointF(7.5, 10.5));
-        p.drawLine(QPointF(12.0, 15.0), QPointF(16.5, 10.5));
-        p.drawLine(QPointF(5.5, 20.0), QPointF(18.5, 20.0));
-    } else if (type == QLatin1String("upload")) {
-        p.setPen(penOf(QColor(34, 211, 238), 2.5));
-        p.setBrush(Qt::NoBrush);
-        p.drawLine(QPointF(12.0, 21.0), QPointF(12.0, 9.0));
-        p.drawLine(QPointF(12.0, 9.0), QPointF(7.5, 13.5));
-        p.drawLine(QPointF(12.0, 9.0), QPointF(16.5, 13.5));
-        p.drawLine(QPointF(5.5, 4.0), QPointF(18.5, 4.0));
-    } else if (type == QLatin1String("start") || type == QLatin1String("stop")) {
-        const QColor c = (type == QLatin1String("start")) ? QColor(0, 229, 255)
-                                                          : QColor(248, 113, 113);
-        p.setPen(penOf(c, 2.4));
-        p.setBrush(Qt::NoBrush);
-        // 竖插棒与圆环开口分离，不碰弧端
-        p.drawLine(QPointF(12.0, 2.5), QPointF(12.0, 11.5));
-        QPainterPath arcPath;
-        const QRectF circleBox(3.5, 3.5, 17.0, 17.0);
-        arcPath.arcMoveTo(circleBox, 45);
-        arcPath.arcTo(circleBox, 45, 270);
-        p.drawPath(arcPath);
-    } else if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del")) {
-        p.setPen(penOf(QColor(245, 158, 11), 2.4));
-        p.setBrush(Qt::NoBrush);
-        QPainterPath shieldPath;
-        shieldPath.moveTo(12.0, 2.5);
-        shieldPath.lineTo(4.5, 5.5);
-        shieldPath.lineTo(4.5, 11.8);
-        shieldPath.cubicTo(4.5, 16.5, 7.7, 20.8, 12.0, 22.0);
-        shieldPath.cubicTo(16.3, 20.8, 19.5, 16.5, 19.5, 11.8);
-        shieldPath.lineTo(19.5, 5.5);
-        shieldPath.closeSubpath();
-        p.drawPath(shieldPath);
-    } else {
-        // check / 挂载等：天蓝脉冲
-        p.setPen(penOf(QColor(56, 189, 248), 2.4));
-        p.setBrush(Qt::NoBrush);
-        QPainterPath pulsePath;
-        pulsePath.moveTo(3.5, 13.5);
-        pulsePath.lineTo(7.5, 13.5);
-        pulsePath.lineTo(10.8, 6.0);
-        pulsePath.lineTo(14.2, 19.0);
-        pulsePath.lineTo(17.0, 13.5);
-        pulsePath.lineTo(20.5, 13.5);
-        p.drawPath(pulsePath);
-    }
+    renderer.render(&p, QRectF(0, 0, logicalSize, logicalSize));
     return pm;
+}
+
+QPixmap makeTypeIcon(const QString &type, int size)
+{
+    QByteArray svg;
+    if (type == QLatin1String("download")) {
+        svg = R"SVG(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<path d="M12 3V15M12 15L7.5 10.5M12 15L16.5 10.5" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="5.5" y1="20" x2="18.5" y2="20" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+</svg>)SVG";
+    } else if (type == QLatin1String("upload")) {
+        svg = R"SVG(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<path d="M12 21V9M12 9L7.5 13.5M12 9L16.5 13.5" stroke="#22D3EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="5.5" y1="4" x2="18.5" y2="4" stroke="#22D3EE" stroke-width="2.5" stroke-linecap="round"/>
+</svg>)SVG";
+    } else if (type == QLatin1String("start") || type == QLatin1String("stop")) {
+        const char *color = (type == QLatin1String("start")) ? "#00E5FF" : "#F87171";
+        svg = QByteArray(
+                  "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\">"
+                  "<line x1=\"12\" y1=\"2.5\" x2=\"12\" y2=\"11.5\" stroke=\"")
+              + color
+              + "\" stroke-width=\"2.4\" stroke-linecap=\"round\"/>"
+                "<path d=\"M18.36 6.64A8.5 8.5 0 1 1 5.64 6.64\" stroke=\""
+              + color
+              + "\" stroke-width=\"2.4\" stroke-linecap=\"round\" fill=\"none\"/>"
+                "</svg>";
+    } else if (type == QLatin1String("nic_add") || type == QLatin1String("nic_del")) {
+        svg = R"SVG(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<path d="M12 2.5L4.5 5.5V11.8C4.5 16.5 7.7 20.8 12 22C16.3 20.8 19.5 16.5 19.5 11.8V5.5L12 2.5Z" stroke="#F59E0B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>)SVG";
+    } else {
+        svg = R"SVG(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+<path d="M3.5 13.5H7.5L10.8 6L14.2 19L17 13.5H20.5" stroke="#38BDF8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>)SVG";
+    }
+
+    QPixmap pm = renderInlineSvg(svg, size);
+    if (!pm.isNull())
+        return pm;
+
+    // 兜底：若 SVG 解析失败，手绘电源环仍能看见
+    QPixmap fallback(size, size);
+    fallback.fill(Qt::transparent);
+    QPainter p(&fallback);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(QColor(0, 229, 255), 2.0, Qt::SolidLine, Qt::RoundCap));
+    p.drawEllipse(QRectF(3, 3, size - 6, size - 6));
+    return fallback;
 }
 
 } // namespace
@@ -322,10 +318,10 @@ QWidget *LogMonitorView::createRow(const QString &timestamp, const QString &type
     lay->addWidget(time, 0, Qt::AlignVCenter);
 
     auto *typeIcon = new QLabel;
-    typeIcon->setFixedSize(18, 18);
+    typeIcon->setFixedSize(20, 20);
     typeIcon->setAlignment(Qt::AlignCenter);
     typeIcon->setStyleSheet(QStringLiteral("background:transparent;border:none;"));
-    typeIcon->setPixmap(makeTypeIcon(type, 18));
+    typeIcon->setPixmap(makeTypeIcon(type, 20));
     lay->addWidget(typeIcon, 0, Qt::AlignVCenter);
 
     auto *content = new QLabel(toRichMessage(message));
