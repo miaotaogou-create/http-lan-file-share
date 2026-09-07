@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="none">
+  <defs>
+    <filter id="phone-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#phone-glow)">
+    <rect x="5.5" y="2.5" width="13" height="19" rx="3" stroke="#93C5FD" stroke-width="2" stroke-linejoin="round" />
+    <circle cx="12" cy="18" r="1" fill="#BFDBFE" />
+  </g>
+</svg>

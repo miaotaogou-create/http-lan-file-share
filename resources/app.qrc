@@ -17,5 +17,7 @@
     <file>icons/search_browse.svg</file>
     <file>icons/qrcode_icon.svg</file>
     <file>icons/qrcode_neon_glow.svg</file>
+    <file>icons/smartphone.svg</file>
+    <file>icons/smartphone_glow.svg</file>
   </qresource>
 </RCC>

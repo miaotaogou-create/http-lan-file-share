@@ -1027,12 +1027,21 @@ void MainWindow::buildUi()
     auto *qrTitle = new QLabel(QStringLiteral("扫码提货 / 扫码下载"));
     qrTitle->setStyleSheet(QStringLiteral(
         "color:#e2e8f0;font-size:12px;font-weight:700;letter-spacing:0.5px;background:transparent;"));
+    auto *qrHintIcon = new QLabel;
+    qrHintIcon->setFixedSize(12, 12);
+    qrHintIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/smartphone.svg"), 12).pixmap(12, 12));
     auto *qrHint = new QLabel(QStringLiteral("摄像头对准扫码"));
     qrHint->setStyleSheet(QStringLiteral("color:#94a3b8;font-size:11px;background:transparent;"));
+    auto *qrHintWrap = new QWidget;
+    auto *qrHintLay = new QHBoxLayout(qrHintWrap);
+    qrHintLay->setContentsMargins(0, 0, 0, 0);
+    qrHintLay->setSpacing(4);
+    qrHintLay->addWidget(qrHintIcon, 0, Qt::AlignVCenter);
+    qrHintLay->addWidget(qrHint, 0, Qt::AlignVCenter);
     qrHead->addWidget(qrTitleIcon, 0, Qt::AlignVCenter);
     qrHead->addWidget(qrTitle, 0, Qt::AlignVCenter);
     qrHead->addStretch(1);
-    qrHead->addWidget(qrHint, 0, Qt::AlignVCenter);
+    qrHead->addWidget(qrHintWrap, 0, Qt::AlignVCenter);
     qrLay->addLayout(qrHead);
 
     m_qr = new QrCodeWidget;
@@ -1043,6 +1052,21 @@ void MainWindow::buildUi()
     m_qrUrlLabel->setAlignment(Qt::AlignCenter);
     m_qrUrlLabel->setWordWrap(true);
     qrLay->addWidget(m_qrUrlLabel);
+
+    auto *scanTip = new QWidget;
+    auto *scanTipLay = new QHBoxLayout(scanTip);
+    scanTipLay->setContentsMargins(0, 2, 0, 2);
+    scanTipLay->setSpacing(6);
+    auto *scanPhoneIcon = new QLabel;
+    scanPhoneIcon->setFixedSize(14, 14);
+    scanPhoneIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/smartphone.svg"), 14).pixmap(14, 14));
+    auto *scanTipText = new QLabel(QStringLiteral("手机扫码直连 · 手机、平板或局域网客户机扫码即可打开提货页"));
+    scanTipText->setStyleSheet(QStringLiteral("color:#94a3b8;font-size:11px;background:transparent;"));
+    scanTipText->setWordWrap(true);
+    scanTipLay->addWidget(scanPhoneIcon, 0, Qt::AlignTop);
+    scanTipLay->addWidget(scanTipText, 1);
+    qrLay->addWidget(scanTip);
+
     qrLay->addWidget(new QLabel(QStringLiteral("共享文件快捷提货")));
     m_priorityFileLabel = new QLabel(QStringLiteral("暂无打包产物"));
     m_priorityFileLabel->setStyleSheet(QStringLiteral("background:#070d18;border:1px solid #1f324f;border-radius:8px;padding:10px;"));
