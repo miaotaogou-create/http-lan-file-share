@@ -52,7 +52,7 @@ void StatusBadgeWidget::setRunning(bool running, const QString &customText)
         m_anim->stop();
         m_glowAlpha = 0.0;
     }
-    updateGeometry();
+    setFixedWidth(sizeHint().width());
     update();
 }
 
