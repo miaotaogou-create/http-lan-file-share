@@ -3,5 +3,7 @@
     <file>icons/shield_check.svg</file>
     <file>icons/shield_off.svg</file>
     <file>icons/share_app_icon.svg</file>
+    <file>icons/chevron_down.svg</file>
+    <file>icons/chevron_down.png</file>
   </qresource>
 </RCC>

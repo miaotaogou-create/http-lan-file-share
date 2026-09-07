@@ -303,19 +303,15 @@ QComboBox#IpCombo:hover {
 }
 QComboBox#IpCombo::drop-down {
   subcontrol-origin: padding;
-  subcontrol-position: top right;
-  width: 24px;
+  subcontrol-position: center right;
+  width: 28px;
   border: none;
   background: transparent;
 }
 QComboBox#IpCombo::down-arrow {
-  image: none;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 5px solid #e2e8f0;
-  width: 0;
-  height: 0;
-  margin-right: 8px;
+  image: url(:/icons/chevron_down.png);
+  width: 12px;
+  height: 12px;
 }
 QComboBox#IpCombo QAbstractItemView {
   background: #0b1424;
