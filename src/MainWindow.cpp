@@ -338,6 +338,13 @@ QPushButton#Primary {
   border: 1px solid #10b981;
   color: white;
   font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  min-height: 36px;
+}
+QPushButton#Primary:hover {
+  background: #10b981;
+  border-color: #34d399;
 }
 QPushButton#UploadShareBtn {
   background: rgba(6, 78, 59, 0.35);
@@ -359,10 +366,21 @@ QPushButton#UploadShareBtn:pressed {
   border-color: #059669;
 }
 QPushButton#Danger {
-  background: #4c0519;
-  border: 1px solid #fb7185;
-  color: #fecdd3;
+  background: #500724;
+  border: 1px solid #9F1239;
+  color: #ffe4e6;
   font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  min-height: 36px;
+}
+QPushButton#Danger:hover {
+  background: #700A32;
+  border-color: #F43F5E;
+}
+QPushButton#Danger:pressed {
+  background: #3F051C;
+  border-color: #881337;
 }
 QFrame#TabStrip QPushButton {
   background: transparent;
@@ -975,6 +993,10 @@ void MainWindow::buildUi()
     httpHead->addLayout(httpTitleBox, 1);
     m_toggleBtn = new QPushButton(QStringLiteral("一键启动 HTTP 共享"));
     m_toggleBtn->setObjectName(QStringLiteral("Primary"));
+    m_toggleBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/power_icon_white.svg"), 16));
+    m_toggleBtn->setIconSize(QSize(16, 16));
+    m_toggleBtn->setCursor(Qt::PointingHandCursor);
+    m_toggleBtn->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     httpHead->addWidget(m_toggleBtn, 0, Qt::AlignTop);
     httpLay->addLayout(httpHead);
 
@@ -1597,14 +1619,18 @@ void MainWindow::setRunningUi(bool running)
     if (running) {
         m_toggleBtn->setText(QStringLiteral("停止 HTTP 共享"));
         m_toggleBtn->setObjectName(QStringLiteral("Danger"));
+        m_toggleBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/power_icon.svg"), 16));
         m_statusPill->setRunning(true);
     } else {
         m_toggleBtn->setText(QStringLiteral("一键启动 HTTP 共享"));
         m_toggleBtn->setObjectName(QStringLiteral("Primary"));
+        m_toggleBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/power_icon_white.svg"), 16));
         m_statusPill->setRunning(false);
     }
+    m_toggleBtn->setIconSize(QSize(16, 16));
     m_toggleBtn->style()->unpolish(m_toggleBtn);
     m_toggleBtn->style()->polish(m_toggleBtn);
+    m_toggleBtn->updateGeometry();
     if (m_runDot)
         m_runDot->setVisible(running);
     updateShareUrlUi();

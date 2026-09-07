@@ -39,5 +39,7 @@
     <file>icons/upload_icon_glow.svg</file>
     <file>icons/lightning_bolt.svg</file>
     <file>icons/lightning_bolt_glow.svg</file>
+    <file>icons/power_icon.svg</file>
+    <file>icons/power_icon_white.svg</file>
   </qresource>
 </RCC>
