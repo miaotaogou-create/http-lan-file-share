@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" fill="none">
+  <defs>
+    <!-- 背景圆角矩形渐变 -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f1f38" />
+      <stop offset="50%" stop-color="#091322" />
+      <stop offset="100%" stop-color="#040810" />
+    </linearGradient>
+    <!-- 边框微光渐变 -->
+    <linearGradient id="borderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8" />
+      <stop offset="40%" stop-color="#06b6d4" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#1e293b" stop-opacity="0.8" />
+    </linearGradient>
+    <!-- 核心霓虹绿渐变 -->
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <!-- 极速青蓝渐变 -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <!-- 柔光发光滤镜 -->
+    </defs>
+  <!-- 1. 外层深色钛金属质感大圆角矩形底座 (Windows 11 图标外形) -->
+  <rect x="16" y="16" width="224" height="224" rx="48" fill="url(#bgGrad)" stroke="url(#borderGrad)" stroke-width="4" />
+  <!-- 2. 底层内嵌微弱局域网蜂窝网格底纹 -->
+  <g opacity="0.08" stroke="#38bdf8" stroke-width="1.5">
+    <circle cx="128" cy="128" r="88" stroke-dasharray="6 6" />
+    <circle cx="128" cy="128" r="56" stroke-dasharray="4 4" />
+    <line x1="128" y1="36" x2="128" y2="220" />
+    <line x1="36" y1="128" x2="220" y2="128" />
+  </g>
+  <!-- 3. 局域网共享互联链路 (发光层) -->
+  <g>
+    <!-- 连线 -->
+    <line x1="82" y1="128" x2="164" y2="80" stroke="url(#emeraldGrad)" stroke-width="12" stroke-linecap="round" />
+    <line x1="82" y1="128" x2="164" y2="176" stroke="url(#emeraldGrad)" stroke-width="12" stroke-linecap="round" />
+    <!-- 节点脉冲连接内芯 -->
+    <line x1="82" y1="128" x2="164" y2="80" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round" />
+    <line x1="82" y1="128" x2="164" y2="176" stroke="#a7f3d0" stroke-width="4" stroke-linecap="round" />
+    <!-- 左侧发射主节点 (主机 Server) -->
+    <circle cx="80" cy="128" r="24" fill="#064e3b" stroke="#34d399" stroke-width="6" />
+    <circle cx="80" cy="128" r="10" fill="#6ee7b7" />
+    <!-- 右上客户机接收节点 (Client 1) -->
+    <circle cx="166" cy="78" r="20" fill="#082f49" stroke="#38bdf8" stroke-width="5" />
+    <circle cx="166" cy="78" r="8" fill="#7dd3fc" />
+    <!-- 右下客户机接收节点 (Client 2) -->
+    <circle cx="166" cy="178" r="20" fill="#082f49" stroke="#38bdf8" stroke-width="5" />
+    <circle cx="166" cy="178" r="8" fill="#7dd3fc" />
+    <!-- 4. 传输动速下载箭头 -->
+    <path d="M128 92L128 142M128 142L116 130M128 142L140 130" stroke="#facc15" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

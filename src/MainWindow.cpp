@@ -676,7 +676,7 @@ void MainWindow::buildUi()
     auto *appIcon = new QLabel;
     appIcon->setFixedSize(26, 26);
     {
-        QSvgRenderer renderer(QStringLiteral(":/icons/app_icon.svg"));
+        QSvgRenderer renderer(QStringLiteral(":/icons/app_icon_ui.svg"));
         QPixmap pm(26, 26);
         pm.fill(Qt::transparent);
         QPainter p(&pm);
