@@ -256,12 +256,24 @@ QFrame#TabStrip {
   border: 1px solid #1d3153;
   border-radius: 10px;
 }
-QHeaderView::section {
-  background: #0e1b2f;
-  color: #94a3b8;
-  border: none;
-  border-bottom: 1px solid #1b2f4d;
-  padding: 8px;
+QPushButton#BackPortalBtn {
+  background: #0b1627;
+  border: 2px solid #22d3ee;
+  border-radius: 8px;
+  color: #67e8f9;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 14px 8px 12px;
+  min-height: 34px;
+}
+QPushButton#BackPortalBtn:hover {
+  background: #0e213b;
+  border: 2px solid #67e8f9;
+  color: #a5f3fc;
+}
+QPushButton#BackPortalBtn:pressed {
+  background: #083344;
+  border: 2px solid #22d3ee;
 }
 QTableWidget {
   background: #070e1b;
@@ -400,6 +412,20 @@ QScrollArea > QWidget > QWidget {
   background: transparent;
 }
 )QSS"));
+}
+
+static QIcon makeBackArrowIcon(const QColor &color)
+{
+    QPixmap pm(16, 16);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setPen(QPen(color, 1.8, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    // ← 箭头
+    p.drawLine(QPointF(12.5, 8), QPointF(4.5, 8));
+    p.drawLine(QPointF(7.5, 4.5), QPointF(4.2, 8));
+    p.drawLine(QPointF(7.5, 11.5), QPointF(4.2, 8));
+    return QIcon(pm);
 }
 
 static QFrame *makeCard(QWidget *parent)
@@ -753,10 +779,17 @@ void MainWindow::buildUi()
     auto *pv = new QVBoxLayout(portalPage);
     pv->setContentsMargins(24, 16, 24, 24);
     auto *backRow = new QHBoxLayout;
-    auto *backBtn = new QPushButton(QStringLiteral("← 返回 Windows 客户端控制台"));
-    backRow->addWidget(backBtn);
+    auto *backBtn = new QPushButton(QStringLiteral("返回 Windows 客户端控制台"));
+    backBtn->setObjectName(QStringLiteral("BackPortalBtn"));
+    backBtn->setCursor(Qt::PointingHandCursor);
+    backBtn->setIcon(makeBackArrowIcon(QColor(QStringLiteral("#67e8f9"))));
+    backBtn->setIconSize(QSize(16, 16));
+    backBtn->setFlat(false);
+    backRow->addWidget(backBtn, 0, Qt::AlignVCenter);
     backRow->addStretch();
-    backRow->addWidget(new QLabel(QStringLiteral("提货专线预览 · 真实页面请用浏览器访问共享地址")));
+    auto *previewHint = new QLabel(QStringLiteral("提货专线预览 · 真实页面请用浏览器访问共享地址"));
+    previewHint->setObjectName(QStringLiteral("Muted"));
+    backRow->addWidget(previewHint, 0, Qt::AlignVCenter);
     pv->addLayout(backRow);
 
     auto *portalCard = makeCard(portalPage);
