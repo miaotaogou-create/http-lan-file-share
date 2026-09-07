@@ -9,5 +9,7 @@
     <file>icons/chevron_down.png</file>
     <file>icons/chevron_up.svg</file>
     <file>icons/chevron_up.png</file>
+    <file>icons/globe_network.svg</file>
+    <file>icons/globe_container.svg</file>
   </qresource>
 </RCC>

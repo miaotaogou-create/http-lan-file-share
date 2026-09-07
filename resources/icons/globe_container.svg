@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="64" height="64" fill="none">
+  <!-- 暗黑微透绿圆角边框背景 -->
+  <rect x="1.5" y="1.5" width="29" height="29" rx="7" fill="#041b17" stroke="#059669" stroke-width="1.5" stroke-opacity="0.8"/>
+  <!-- 核心翡翠绿发光地球 -->
+  <g transform="translate(4, 4)">
+    <circle cx="12" cy="12" r="9.5" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    <line x1="2.5" y1="12" x2="21.5" y2="12" stroke="#10B981" stroke-width="2" stroke-linecap="round" />
+    <path d="M12 2.5C15.2 5.5 16.8 8.7 16.8 12C16.8 15.3 15.2 18.5 12 21.5C8.8 18.5 7.2 15.3 7.2 12C7.2 8.7 8.8 5.5 12 2.5Z"
+          stroke="#10B981"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round" />
+  </g>
+</svg>

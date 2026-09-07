@@ -808,13 +808,33 @@ void MainWindow::buildUi()
     auto *httpLay = new QVBoxLayout(httpCard);
     httpLay->setContentsMargins(16, 16, 16, 16);
     auto *httpHead = new QHBoxLayout;
+    httpHead->setSpacing(14);
+    auto *globeIcon = new QLabel;
+    globeIcon->setFixedSize(40, 40);
+    {
+        QSvgRenderer renderer(QStringLiteral(":/icons/globe_container.svg"));
+        QPixmap pm(40, 40);
+        pm.fill(Qt::transparent);
+        QPainter p(&pm);
+        p.setRenderHint(QPainter::Antialiasing, true);
+        p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+        renderer.render(&p, QRectF(0, 0, 40, 40));
+        globeIcon->setPixmap(pm);
+    }
     auto *httpTitleBox = new QVBoxLayout;
+    httpTitleBox->setSpacing(4);
+    auto *titleRow = new QHBoxLayout;
+    titleRow->setSpacing(10);
     auto *httpTitle = new QLabel(QStringLiteral("局域网 HTTP 极速文件共享服务"));
     httpTitle->setObjectName(QStringLiteral("Title"));
     m_statusPill = new QLabel(QStringLiteral("共享服务已停止"));
     m_statusPill->setObjectName(QStringLiteral("Badge"));
-    httpTitleBox->addWidget(httpTitle);
+    titleRow->addWidget(httpTitle, 0, Qt::AlignVCenter);
+    titleRow->addWidget(m_statusPill, 0, Qt::AlignVCenter);
+    titleRow->addStretch(1);
+    httpTitleBox->addLayout(titleRow);
     httpTitleBox->addWidget(new QLabel(QStringLiteral("一键将本地文件夹发布为 HTTP 站点，手机/电脑/开发板均可下载。")));
+    httpHead->addWidget(globeIcon, 0, Qt::AlignTop);
     httpHead->addLayout(httpTitleBox, 1);
     m_toggleBtn = new QPushButton(QStringLiteral("一键启动 HTTP 共享"));
     m_toggleBtn->setObjectName(QStringLiteral("Primary"));
