@@ -27,3 +27,8 @@ crash_*.txt
 *.obj
 *.exe
 !tools/*.exe
+
+# 便携打包中间产物（发布物在 GitHub Release，不进仓库）
+pack/stage/
+pack/dist/
+pack/*.evb
