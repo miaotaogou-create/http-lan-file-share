@@ -229,7 +229,7 @@ QFrame#TabStrip QPushButton {
   padding: 0px 14px;
   margin: 0px;
   min-height: 0px;
-  max-height: 32px;
+  max-height: 40px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
@@ -418,7 +418,7 @@ void MainWindow::buildUi()
     // 顶栏：左品牌 | 居中页签 | 右窗控
     m_titleBar = new QWidget;
     m_titleBar->setObjectName(QStringLiteral("TitleBar"));
-    m_titleBar->setFixedHeight(50);
+    m_titleBar->setFixedHeight(56);
     m_titleBar->installEventFilter(this);
     auto *tb = new QHBoxLayout(m_titleBar);
     tb->setContentsMargins(10, 4, 6, 4);
@@ -459,8 +459,8 @@ void MainWindow::buildUi()
     tabs->setObjectName(QStringLiteral("TabStrip"));
     tabs->setFrameShape(QFrame::NoFrame);
     tabs->setAttribute(Qt::WA_StyledBackground, true);
-    // 外框略高，选中块更饱满，上下只留细缝
-    tabs->setFixedHeight(40);
+    // 选中块尽量占满条高，只留上下细缝
+    tabs->setFixedHeight(46);
     tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     auto *tabsLay = new QHBoxLayout(tabs);
     tabsLay->setContentsMargins(3, 3, 3, 3);
@@ -476,8 +476,8 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setFixedHeight(32);
-        b->setIconSize(QSize(14, 14));
+        b->setFixedHeight(40);
+        b->setIconSize(QSize(15, 15));
         b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
 
