@@ -225,11 +225,10 @@ QPushButton#Danger {
 QFrame#TabStrip QPushButton {
   background: transparent;
   border: 2px solid transparent;
-  border-radius: 6px;
-  padding: 0px 14px;
+  border-radius: 8px;
+  padding: 8px 16px;
   margin: 0px;
   min-height: 0px;
-  max-height: 40px;
   color: #94a3b8;
   font-size: 12px;
   font-weight: 600;
@@ -238,21 +237,24 @@ QFrame#TabStrip QPushButton#TabActive {
   background: rgba(6, 78, 59, 0.55);
   border: 2px solid #34d399;
   color: #6ee7b7;
+  padding: 8px 16px;
 }
 QFrame#TabStrip QPushButton#TabActiveCyan {
   background: rgba(8, 51, 68, 0.65);
   border: 2px solid #22d3ee;
   color: #67e8f9;
+  padding: 8px 16px;
 }
 QFrame#TabStrip QPushButton#TabActiveIndigo {
   background: rgba(49, 46, 129, 0.55);
   border: 2px solid #818cf8;
   color: #a5b4fc;
+  padding: 8px 16px;
 }
 QFrame#TabStrip {
   background: #0d182b;
   border: 1px solid #1d3153;
-  border-radius: 8px;
+  border-radius: 10px;
 }
 QHeaderView::section {
   background: #0e1b2f;
@@ -418,7 +420,7 @@ void MainWindow::buildUi()
     // 顶栏：左品牌 | 居中页签 | 右窗控
     m_titleBar = new QWidget;
     m_titleBar->setObjectName(QStringLiteral("TitleBar"));
-    m_titleBar->setFixedHeight(56);
+    m_titleBar->setFixedHeight(58);
     m_titleBar->installEventFilter(this);
     auto *tb = new QHBoxLayout(m_titleBar);
     tb->setContentsMargins(10, 4, 6, 4);
@@ -459,11 +461,11 @@ void MainWindow::buildUi()
     tabs->setObjectName(QStringLiteral("TabStrip"));
     tabs->setFrameShape(QFrame::NoFrame);
     tabs->setAttribute(Qt::WA_StyledBackground, true);
-    // 选中块尽量占满条高，只留上下细缝
-    tabs->setFixedHeight(46);
+    // 外框只包住页签；真正加高的是选中项绿色描边框本身
+    tabs->setFixedHeight(50);
     tabs->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     auto *tabsLay = new QHBoxLayout(tabs);
-    tabsLay->setContentsMargins(3, 3, 3, 3);
+    tabsLay->setContentsMargins(4, 4, 4, 4);
     tabsLay->setSpacing(4);
 
     m_tabManager = new QPushButton(QStringLiteral("客户端控制面板"));
@@ -476,7 +478,8 @@ void MainWindow::buildUi()
         b->setObjectName(QStringLiteral("Tab"));
         b->setCursor(Qt::PointingHandCursor);
         b->setFlat(true);
-        b->setFixedHeight(40);
+        // 选中绿框高度由 padding + 文字撑开，这里给足竖向空间
+        b->setMinimumHeight(42);
         b->setIconSize(QSize(15, 15));
         b->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
     }
