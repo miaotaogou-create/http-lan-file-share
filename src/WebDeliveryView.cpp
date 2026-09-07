@@ -11,6 +11,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QScrollArea>
+#include <QSizePolicy>
 #include <QSvgRenderer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -59,34 +60,64 @@ WebDeliveryView::WebDeliveryView(QWidget *parent)
 {
     setObjectName(QStringLiteral("WebDeliveryView"));
     setStyleSheet(QStringLiteral(
-        "QWidget#WebDeliveryView { background-color:#030712; color:#F8FAFC; }"
+        "QWidget#WebDeliveryView { background-color:#070e1a; color:#F8FAFC; }"
+        "QFrame#DeliveryCard {"
+        "  background-color:#0b1627;"
+        "  border:1px solid #1d3153;"
+        "  border-radius:16px;"
+        "}"
         "QScrollArea { background:transparent; border:none; }"
         "QScrollArea > QWidget > QWidget { background:transparent; }"));
 
     auto *root = new QVBoxLayout(this);
-    root->setContentsMargins(24, 20, 24, 24);
-    root->setSpacing(18);
-    root->addWidget(createTopNavBar());
+    root->setContentsMargins(0, 0, 0, 0);
+    root->setSpacing(0);
 
     auto *scroll = new QScrollArea;
     scroll->setWidgetResizable(true);
     scroll->setFrameShape(QFrame::NoFrame);
     scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    scroll->setAlignment(Qt::AlignHCenter | Qt::AlignTop);
 
-    auto *content = new QWidget;
-    auto *contentLay = new QVBoxLayout(content);
-    contentLay->setContentsMargins(0, 0, 0, 0);
-    contentLay->setSpacing(18);
-    contentLay->addWidget(createHeroHeader());
-    contentLay->addWidget(createSearchBar());
+    auto *page = new QWidget;
+    auto *pageLay = new QHBoxLayout(page);
+    pageLay->setContentsMargins(24, 20, 24, 24);
+    pageLay->setSpacing(0);
+    pageLay->addStretch(1);
+
+    // 中间列：最大约 960px，左右留白形成居中卡片感
+    auto *column = new QWidget;
+    column->setMaximumWidth(960);
+    column->setMinimumWidth(560);
+    column->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    auto *colLay = new QVBoxLayout(column);
+    colLay->setContentsMargins(0, 0, 0, 0);
+    colLay->setSpacing(16);
+
+    // 返回栏在卡片外上方（对齐参考）
+    colLay->addWidget(createTopNavBar());
+
+    auto *card = new QFrame;
+    card->setObjectName(QStringLiteral("DeliveryCard"));
+    card->setAttribute(Qt::WA_StyledBackground, true);
+    auto *cardLay = new QVBoxLayout(card);
+    cardLay->setContentsMargins(24, 22, 24, 22);
+    cardLay->setSpacing(18);
+    cardLay->addWidget(createHeroHeader());
+    cardLay->addWidget(createSearchBar());
 
     m_fileListLayout = new QVBoxLayout;
     m_fileListLayout->setSpacing(12);
-    contentLay->addLayout(m_fileListLayout);
-    contentLay->addWidget(createBoardGuideCard());
-    contentLay->addStretch(1);
+    cardLay->addLayout(m_fileListLayout);
+    cardLay->addWidget(createBoardGuideCard());
 
-    scroll->setWidget(content);
+    colLay->addWidget(card, 0);
+    colLay->addStretch(1);
+
+    pageLay->addWidget(column, 1);
+    pageLay->addStretch(1);
+
+    scroll->setWidget(page);
     root->addWidget(scroll, 1);
 }
 
