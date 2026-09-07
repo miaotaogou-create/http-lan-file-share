@@ -26,6 +26,7 @@ set(APP_SOURCES
   src/BreathingBoltIcon.cpp
   src/WebDeliveryView.cpp
   src/LogMonitorView.cpp
+  src/UacAuthDialog.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 

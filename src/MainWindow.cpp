@@ -4,6 +4,7 @@
 #include "DropUploadArea.h"
 #include "WebDeliveryView.h"
 #include "LogMonitorView.h"
+#include "UacAuthDialog.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -1781,18 +1782,16 @@ void MainWindow::updateUacBadge()
 
 void MainWindow::requestUacElevation()
 {
-    if (NicManager::isElevated()) {
+    const bool elevated = NicManager::isElevated();
+    if (!UacAuthDialog::ask(elevated, this))
+        return;
+
+    if (elevated) {
         updateUacBadge();
         showToast(QStringLiteral("当前已是管理员权限（真实 UAC 状态）"));
         return;
     }
-    const auto ret = QMessageBox::question(
-        this, QStringLiteral("请求管理员权限"),
-        QStringLiteral("追加/解绑网卡 IP 需要管理员权限。\n"
-                       "将弹出 Windows UAC 对话框，同意后以管理员身份重新启动本程序。\n\n"
-                       "是否继续？"));
-    if (ret != QMessageBox::Yes)
-        return;
+
     QString err;
     if (NicManager::requestElevation(&err)) {
         QTimer::singleShot(0, qApp, &QCoreApplication::quit);
