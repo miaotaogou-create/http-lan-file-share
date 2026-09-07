@@ -42,6 +42,8 @@ private slots:
     void selfCheck();
     void addNicIp();
     void deleteSelectedNic();
+    void deleteNicIp(const QString &ip);
+    void requestUacElevation();
     void uploadLocalFiles();
     void importFilesToShare(const QStringList &paths);
     void downloadSelectedFile();
@@ -71,6 +73,10 @@ private:
     QWidget *makeFileNameCell(const QString &fileName);
     QWidget *makeDownloadCountCell(int count);
     QWidget *makeFileActionBar(const QString &path, const QString &name);
+    QWidget *makeNicNameCell(const QString &name, bool isPrimary, bool isHttpActive);
+    QWidget *makeNicIpCell(const QString &ip, bool isPrimary);
+    QWidget *makeNicActionCell(const QString &ip, bool isPrimary);
+    void applyUacChip(QWidget *badge, QLabel *icon, QLabel *text, bool elevated, bool nicStyle);
     void updatePriorityPickup(const QString &path, const QString &name, qint64 size);
     QString currentShareUrl() const;
     QString selectedIp() const;
@@ -93,6 +99,9 @@ private:
     QWidget *m_uacBadge = nullptr;
     QLabel *m_uacIcon = nullptr;
     QLabel *m_uacText = nullptr;
+    QWidget *m_nicUacBadge = nullptr;
+    QLabel *m_nicUacIcon = nullptr;
+    QLabel *m_nicUacText = nullptr;
     QPoint m_dragPos;
     bool m_dragging = false;
     StatusBadgeWidget *m_statusPill = nullptr;

@@ -359,6 +359,80 @@ QTableWidget#FileTable::item:selected {
   background: #081528;
   color: #e2e8f0;
 }
+QTableWidget#NicTable {
+  background: #030813;
+  border: 1px solid #132338;
+  border-radius: 8px;
+  gridline-color: transparent;
+  selection-background-color: transparent;
+  outline: none;
+}
+QTableWidget#NicTable QHeaderView::section {
+  background: transparent;
+  color: #94A3B8;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 10px 12px;
+  border: none;
+  border-right: none;
+  border-bottom: 1px solid #0F2036;
+}
+QTableWidget#NicTable::item {
+  border: none;
+  border-bottom: 1px solid #0B1728;
+  padding: 0px;
+  background: transparent;
+}
+QTableWidget#NicTable::item:hover {
+  background: #071526;
+}
+QLineEdit#NicIpEdit, QLineEdit#NicMaskEdit {
+  background: #061121;
+  border: 1px solid #162E4D;
+  border-radius: 6px;
+  color: #38BDF8;
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 13px;
+  padding: 0 10px;
+  min-height: 34px;
+}
+QLineEdit#NicMaskEdit {
+  color: #E2E8F0;
+}
+QLineEdit#NicIpEdit:focus, QLineEdit#NicMaskEdit:focus {
+  border: 1px solid #00D2FF;
+}
+QWidget#NicUac, QWidget#NicUacOff {
+  border-radius: 13px;
+}
+QWidget#NicUac {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.6);
+}
+QWidget#NicUacOff {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid #475569;
+}
+QWidget#NicUac QLabel, QWidget#NicUacOff QLabel {
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+QWidget#NicUac QLabel#UacText {
+  color: #FBBF24;
+  font-size: 12px;
+  font-weight: 500;
+}
+QWidget#NicUacOff QLabel#UacText {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+}
+QLabel#NicTopoIcon {
+  background-color: #06182C;
+  border: 1px solid #0E365E;
+  border-radius: 6px;
+}
 QPushButton {
   background: #122035;
   border: 1px solid #233857;
@@ -1427,40 +1501,102 @@ void MainWindow::buildUi()
     // 网卡卡
     auto *nicCard = makeCard(managerPage);
     auto *nicLay = new QVBoxLayout(nicCard);
-    nicLay->setContentsMargins(16, 16, 16, 16);
-    auto *nicHead = new QHBoxLayout;
-    auto *nicTitle = new QLabel(QStringLiteral("有线网卡高级 IP 地址绑定与管理 (NIC Manager)"));
-    nicTitle->setObjectName(QStringLiteral("Title"));
-    nicHead->addWidget(nicTitle);
-    nicHead->addStretch();
-    auto *refreshNicBtn = new QPushButton(QStringLiteral("刷新网卡"));
-    nicHead->addWidget(refreshNicBtn);
-    nicLay->addLayout(nicHead);
-    nicLay->addWidget(new QLabel(QStringLiteral(
-        "支持向现有网卡追加辅助调试段 IP（例如 192.168.8.x），以便连接不同网段的 ARM 开发板，无需修改默认网关。")));
+    nicLay->setContentsMargins(20, 20, 20, 20);
+    nicLay->setSpacing(14);
 
-    auto *addRow = new QHBoxLayout;
+    auto *nicHead = new QHBoxLayout;
+    nicHead->setSpacing(10);
+    auto *nicTopo = new QLabel;
+    nicTopo->setObjectName(QStringLiteral("NicTopoIcon"));
+    nicTopo->setFixedSize(30, 30);
+    nicTopo->setAlignment(Qt::AlignCenter);
+    nicTopo->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/network_nodes.svg"), 20));
+    auto *nicTitle = new QLabel(QStringLiteral("有线网卡高级 IP 地址绑定与管理 (NIC Manager)"));
+    nicTitle->setStyleSheet(QStringLiteral("color:#FFFFFF;font-size:15px;font-weight:700;background:transparent;"));
+
+    m_nicUacBadge = new QWidget;
+    m_nicUacBadge->setObjectName(QStringLiteral("NicUacOff"));
+    m_nicUacBadge->setCursor(Qt::PointingHandCursor);
+    m_nicUacBadge->setAttribute(Qt::WA_StyledBackground, true);
+    m_nicUacBadge->installEventFilter(this);
+    auto *nicUacLay = new QHBoxLayout(m_nicUacBadge);
+    nicUacLay->setContentsMargins(12, 4, 12, 4);
+    nicUacLay->setSpacing(6);
+    m_nicUacIcon = new QLabel;
+    m_nicUacIcon->setFixedSize(14, 14);
+    m_nicUacIcon->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    m_nicUacText = new QLabel;
+    m_nicUacText->setObjectName(QStringLiteral("UacText"));
+    m_nicUacText->setAttribute(Qt::WA_TransparentForMouseEvents, true);
+    nicUacLay->addWidget(m_nicUacIcon, 0, Qt::AlignVCenter);
+    nicUacLay->addWidget(m_nicUacText, 0, Qt::AlignVCenter);
+
+    nicHead->addWidget(nicTopo, 0, Qt::AlignVCenter);
+    nicHead->addWidget(nicTitle, 0, Qt::AlignVCenter);
+    nicHead->addStretch(1);
+    nicHead->addWidget(m_nicUacBadge, 0, Qt::AlignVCenter);
+    nicLay->addLayout(nicHead);
+
+    auto *nicDesc = new QLabel(QStringLiteral(
+        "支持向现有网卡快速追加辅助调试段 IP（例如 192.168.8.x），以便无缝连接不同网段的 ARM 嵌入式开发板，无需修改默认网关。"));
+    nicDesc->setWordWrap(true);
+    nicDesc->setStyleSheet(QStringLiteral("color:#94A3B8;font-size:12px;background:transparent;"));
+    nicLay->addWidget(nicDesc);
+
+    auto *formRow = new QHBoxLayout;
+    formRow->setSpacing(16);
+    auto *ipCol = new QVBoxLayout;
+    ipCol->setSpacing(6);
+    auto *ipLab = new QLabel(QStringLiteral("追加辅助 IP 地址:"));
+    ipLab->setStyleSheet(QStringLiteral("color:#CBD5E1;font-size:12px;font-weight:700;background:transparent;"));
     m_newIpEdit = new QLineEdit(QStringLiteral("192.168.8.202"));
+    m_newIpEdit->setObjectName(QStringLiteral("NicIpEdit"));
+    m_newIpEdit->setFixedHeight(36);
+    ipCol->addWidget(ipLab);
+    ipCol->addWidget(m_newIpEdit);
+
+    auto *maskCol = new QVBoxLayout;
+    maskCol->setSpacing(6);
+    auto *maskLab = new QLabel(QStringLiteral("子网掩码 (Subnet Mask):"));
+    maskLab->setStyleSheet(QStringLiteral("color:#CBD5E1;font-size:12px;font-weight:700;background:transparent;"));
     m_newMaskEdit = new QLineEdit(QStringLiteral("255.255.255.0"));
+    m_newMaskEdit->setObjectName(QStringLiteral("NicMaskEdit"));
+    m_newMaskEdit->setFixedHeight(36);
+    maskCol->addWidget(maskLab);
+    maskCol->addWidget(m_newMaskEdit);
+
     auto *addNicBtn = new QPushButton(QStringLiteral("+ 追加绑定 IP"));
     addNicBtn->setObjectName(QStringLiteral("Primary"));
-    addRow->addWidget(new QLabel(QStringLiteral("追加辅助 IP:")));
-    addRow->addWidget(m_newIpEdit, 1);
-    addRow->addWidget(new QLabel(QStringLiteral("子网掩码:")));
-    addRow->addWidget(m_newMaskEdit, 1);
-    addRow->addWidget(addNicBtn);
-    nicLay->addLayout(addRow);
+    addNicBtn->setCursor(Qt::PointingHandCursor);
+    addNicBtn->setFixedHeight(36);
+
+    formRow->addLayout(ipCol, 4);
+    formRow->addLayout(maskCol, 4);
+    formRow->addWidget(addNicBtn, 0, Qt::AlignBottom);
+    nicLay->addLayout(formRow);
 
     m_nicTable = new QTableWidget(0, 4);
+    m_nicTable->setObjectName(QStringLiteral("NicTable"));
     m_nicTable->setHorizontalHeaderLabels(
-        {QStringLiteral("网卡与名称"), QStringLiteral("绑定 IP"), QStringLiteral("子网掩码"), QStringLiteral("操作")});
+        {QStringLiteral("网卡与名称"), QStringLiteral("绑定 IP 地址"), QStringLiteral("子网掩码"),
+         QStringLiteral("操作")});
+    m_nicTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     m_nicTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    m_nicTable->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
+    m_nicTable->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Stretch);
+    m_nicTable->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Fixed);
+    m_nicTable->setColumnWidth(3, 120);
     m_nicTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    m_nicTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    m_nicTable->setFocusPolicy(Qt::NoFocus);
+    m_nicTable->setShowGrid(false);
+    m_nicTable->setFrameShape(QFrame::NoFrame);
     m_nicTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_nicTable->verticalHeader()->setVisible(false);
     m_nicTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_nicTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     m_nicTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_nicTable->setMouseTracking(true);
     nicLay->addWidget(m_nicTable);
     mv->addWidget(nicCard);
 
@@ -1561,7 +1697,6 @@ void MainWindow::buildUi()
     connect(selfCheckBtn, &QPushButton::clicked, this, &MainWindow::selfCheck);
     connect(uploadBtn, &QPushButton::clicked, this, &MainWindow::uploadLocalFiles);
     connect(addNicBtn, &QPushButton::clicked, this, &MainWindow::addNicIp);
-    connect(refreshNicBtn, &QPushButton::clicked, this, &MainWindow::refreshNics);
     connect(clearLogBtn, &QPushButton::clicked, this, &MainWindow::clearLogs);
     connect(backBtn, &QPushButton::clicked, this, [this] { switchView(0); });
     connect(m_ipCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onIpSelectionChanged);
@@ -1625,18 +1760,54 @@ void MainWindow::changeEvent(QEvent *event)
         updateMaxButtonIcon();
 }
 
+void MainWindow::applyUacChip(QWidget *badge, QLabel *icon, QLabel *text, bool elevated, bool nicStyle)
+{
+    if (!badge || !icon || !text)
+        return;
+    icon->setPixmap(loadSvgPixmap(
+        elevated ? QStringLiteral(":/icons/shield_check.svg") : QStringLiteral(":/icons/shield_off.svg"), 14));
+    if (nicStyle) {
+        badge->setObjectName(elevated ? QStringLiteral("NicUac") : QStringLiteral("NicUacOff"));
+        text->setText(elevated ? QStringLiteral("Windows UAC 授权已生效")
+                               : QStringLiteral("Windows UAC 授权管理"));
+    } else {
+        badge->setObjectName(elevated ? QStringLiteral("Uac") : QStringLiteral("UacOff"));
+        text->setText(elevated ? QStringLiteral("UAC 已授权") : QStringLiteral("UAC 未授权 · 点击提权"));
+    }
+    badge->setToolTip(elevated ? QStringLiteral("当前进程已通过 Windows UAC 提权（TokenElevation=1）")
+                               : QStringLiteral("当前为标准权限。点击将弹出系统 UAC，同意后以管理员重启。"));
+    badge->style()->unpolish(badge);
+    badge->style()->polish(badge);
+}
+
 void MainWindow::updateUacBadge()
 {
     const bool elevated = NicManager::isElevated();
-    const QString iconPath = elevated ? QStringLiteral(":/icons/shield_check.svg")
-                                      : QStringLiteral(":/icons/shield_off.svg");
-    m_uacIcon->setPixmap(loadSvgPixmap(iconPath, 14));
-    m_uacBadge->setObjectName(elevated ? QStringLiteral("Uac") : QStringLiteral("UacOff"));
-    m_uacText->setText(elevated ? QStringLiteral("UAC 已授权") : QStringLiteral("UAC 未授权 · 点击提权"));
-    m_uacBadge->setToolTip(elevated ? QStringLiteral("当前进程已通过 Windows UAC 提权（TokenElevation=1）")
-                                    : QStringLiteral("当前为标准权限。点击将弹出系统 UAC，同意后以管理员重启。"));
-    m_uacBadge->style()->unpolish(m_uacBadge);
-    m_uacBadge->style()->polish(m_uacBadge);
+    applyUacChip(m_uacBadge, m_uacIcon, m_uacText, elevated, false);
+    applyUacChip(m_nicUacBadge, m_nicUacIcon, m_nicUacText, elevated, true);
+}
+
+void MainWindow::requestUacElevation()
+{
+    if (NicManager::isElevated()) {
+        updateUacBadge();
+        showToast(QStringLiteral("当前已是管理员权限（真实 UAC 状态）"));
+        return;
+    }
+    const auto ret = QMessageBox::question(
+        this, QStringLiteral("请求管理员权限"),
+        QStringLiteral("追加/解绑网卡 IP 需要管理员权限。\n"
+                       "将弹出 Windows UAC 对话框，同意后以管理员身份重新启动本程序。\n\n"
+                       "是否继续？"));
+    if (ret != QMessageBox::Yes)
+        return;
+    QString err;
+    if (NicManager::requestElevation(&err)) {
+        QTimer::singleShot(0, qApp, &QCoreApplication::quit);
+    } else {
+        showToast(err.isEmpty() ? QStringLiteral("提权失败") : err);
+        updateUacBadge();
+    }
 }
 
 QString MainWindow::selectedIp() const
@@ -1803,6 +1974,7 @@ void MainWindow::selfCheck()
 void MainWindow::refreshNics()
 {
     const QString keepIp = selectedIp();
+    const QString httpIp = keepIp;
     const auto nics = NicManager::enumerate();
     m_ipCombo->blockSignals(true);
     m_ipCombo->clear();
@@ -1813,18 +1985,33 @@ void MainWindow::refreshNics()
         m_ipCombo->addItem(QStringLiteral("%1 (%2)").arg(n.name, n.ip), n.ip);
 
         m_nicTable->insertRow(row);
-        auto *nameItem = new QTableWidgetItem(n.name);
-        auto *ipItem = new QTableWidgetItem(n.isPrimary ? QStringLiteral("Primary  %1").arg(n.ip) : n.ip);
+        m_nicTable->setRowHeight(row, 46);
+
+        auto *meta = new QTableWidgetItem;
+        meta->setData(Qt::UserRole, n.ip);
+        meta->setData(Qt::UserRole + 1, n.isPrimary);
+        meta->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        m_nicTable->setItem(row, 0, meta);
+
+        QString displayName = n.name;
+        if (n.isPrimary && !displayName.contains(QStringLiteral("[Primary]")))
+            displayName = QStringLiteral("%1 [Primary]").arg(displayName);
+
+        const bool httpActive = (!httpIp.isEmpty() && httpIp == n.ip);
+        m_nicTable->setCellWidget(row, 0, makeNicNameCell(displayName, n.isPrimary, httpActive));
+        m_nicTable->setCellWidget(row, 1, makeNicIpCell(n.ip, n.isPrimary));
+
         auto *maskItem = new QTableWidgetItem(n.subnet);
-        auto *actItem = new QTableWidgetItem(n.isPrimary ? QStringLiteral("主网卡保护") : QStringLiteral("可解绑"));
-        if (n.isPrimary)
-            actItem->setFlags(actItem->flags() & ~Qt::ItemIsSelectable);
-        m_nicTable->setItem(row, 0, nameItem);
-        m_nicTable->setItem(row, 1, ipItem);
+        maskItem->setForeground(QColor(QStringLiteral("#94A3B8")));
+        QFont mf = maskItem->font();
+        mf.setFamily(QStringLiteral("Consolas"));
+        maskItem->setFont(mf);
+        maskItem->setTextAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        maskItem->setData(Qt::UserRole, n.ip);
+        maskItem->setData(Qt::UserRole + 1, n.isPrimary);
         m_nicTable->setItem(row, 2, maskItem);
-        m_nicTable->setItem(row, 3, actItem);
-        m_nicTable->item(row, 1)->setData(Qt::UserRole, n.ip);
-        m_nicTable->item(row, 1)->setData(Qt::UserRole + 1, n.isPrimary);
+
+        m_nicTable->setCellWidget(row, 3, makeNicActionCell(n.ip, n.isPrimary));
         ++row;
     }
     m_ipCombo->blockSignals(false);
@@ -1835,26 +2022,19 @@ void MainWindow::refreshNics()
     if (m_ipCombo->count() > 0)
         m_ipCombo->setCurrentIndex(idx);
 
-    // 双击非主 IP 解绑
     m_nicTable->disconnect();
-    connect(m_nicTable, &QTableWidget::cellDoubleClicked, this, [this](int r, int) {
+    connect(m_nicTable, &QTableWidget::cellClicked, this, [this](int r, int) {
         if (r < 0)
             return;
-        const bool primary = m_nicTable->item(r, 1)->data(Qt::UserRole + 1).toBool();
-        if (primary)
+        auto *it = m_nicTable->item(r, 0);
+        if (!it)
+            it = m_nicTable->item(r, 2);
+        if (!it)
             return;
-        m_nicTable->selectRow(r);
-        deleteSelectedNic();
-    });
-    connect(m_nicTable, &QTableWidget::itemSelectionChanged, this, [this] {
-        const auto ranges = m_nicTable->selectedRanges();
-        if (ranges.isEmpty())
-            return;
-        const int r = ranges.first().topRow();
-        const QString ip = m_nicTable->item(r, 1)->data(Qt::UserRole).toString();
-        const int idx = m_ipCombo->findData(ip);
-        if (idx >= 0)
-            m_ipCombo->setCurrentIndex(idx);
+        const QString ip = it->data(Qt::UserRole).toString();
+        const int cidx = m_ipCombo->findData(ip);
+        if (cidx >= 0 && cidx != m_ipCombo->currentIndex())
+            m_ipCombo->setCurrentIndex(cidx);
     });
 
     updateShareUrlUi();
@@ -1909,16 +2089,27 @@ void MainWindow::deleteSelectedNic()
     if (ranges.isEmpty())
         return;
     const int r = ranges.first().topRow();
-    if (m_nicTable->item(r, 1)->data(Qt::UserRole + 1).toBool()) {
+    auto *it = m_nicTable->item(r, 0);
+    if (!it)
+        it = m_nicTable->item(r, 2);
+    if (!it)
+        return;
+    if (it->data(Qt::UserRole + 1).toBool()) {
         showToast(QStringLiteral("主网卡受保护，不能解绑"));
         return;
     }
+    deleteNicIp(it->data(Qt::UserRole).toString());
+}
+
+void MainWindow::deleteNicIp(const QString &ip)
+{
+    if (ip.isEmpty())
+        return;
     if (!NicManager::isElevated()) {
         QMessageBox::warning(this, QStringLiteral("需要管理员权限"),
                              QStringLiteral("解绑 IP 需要以管理员身份运行本程序。"));
         return;
     }
-    const QString ip = m_nicTable->item(r, 1)->data(Qt::UserRole).toString();
     if (QMessageBox::question(this, QStringLiteral("确认"),
                               QStringLiteral("确认解绑辅助 IP: %1 ?").arg(ip))
         != QMessageBox::Yes)
@@ -2024,6 +2215,98 @@ void MainWindow::updatePriorityPickup(const QString &path, const QString &name, 
     m_priorityName->setText(name);
     m_prioritySize->setText(fmtBytes(size));
     m_priorityIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/box_cardboard.svg"), 22));
+}
+
+QWidget *MainWindow::makeNicNameCell(const QString &name, bool isPrimary, bool isHttpActive)
+{
+    auto *w = new QWidget;
+    auto *lay = new QHBoxLayout(w);
+    lay->setContentsMargins(12, 0, 8, 0);
+    lay->setSpacing(8);
+
+    auto *dot = new QLabel(QStringLiteral("●"));
+    dot->setStyleSheet(isPrimary ? QStringLiteral("color:#10B981;font-size:11px;background:transparent;")
+                                 : QStringLiteral("color:#64748B;font-size:10px;background:transparent;"));
+
+    auto *text = new QLabel(name);
+    text->setStyleSheet(isPrimary
+                            ? QStringLiteral("color:#FFFFFF;font-weight:700;font-size:13px;background:transparent;")
+                            : QStringLiteral("color:#E2E8F0;font-size:13px;background:transparent;"));
+
+    lay->addWidget(dot, 0, Qt::AlignVCenter);
+    lay->addWidget(text, 0, Qt::AlignVCenter);
+    if (isHttpActive) {
+        auto *httpTag = new QLabel(QStringLiteral("HTTP 当前选用"));
+        httpTag->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            "  background-color: rgba(6, 182, 212, 0.15);"
+            "  color: #38BDF8;"
+            "  border: 1px solid rgba(56, 189, 248, 0.5);"
+            "  border-radius: 4px;"
+            "  font-size: 11px;"
+            "  font-weight: 500;"
+            "  padding: 1px 6px;"
+            "}"));
+        lay->addWidget(httpTag, 0, Qt::AlignVCenter);
+    }
+    lay->addStretch(1);
+    return w;
+}
+
+QWidget *MainWindow::makeNicIpCell(const QString &ip, bool isPrimary)
+{
+    auto *w = new QWidget;
+    auto *lay = new QHBoxLayout(w);
+    lay->setContentsMargins(8, 0, 8, 0);
+    lay->setSpacing(8);
+    if (isPrimary) {
+        auto *badge = new QLabel(QStringLiteral("Primary"));
+        badge->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            "  background-color: #06182C;"
+            "  color: #38BDF8;"
+            "  border: 1px solid #0E3A5F;"
+            "  border-radius: 4px;"
+            "  font-size: 11px;"
+            "  padding: 1px 6px;"
+            "}"));
+        lay->addWidget(badge, 0, Qt::AlignVCenter);
+    }
+    auto *ipText = new QLabel(ip);
+    ipText->setStyleSheet(QStringLiteral(
+        "color:#38BDF8;font-family:Consolas,'Cascadia Mono',monospace;"
+        "font-size:13px;font-weight:700;background:transparent;"));
+    lay->addWidget(ipText, 0, Qt::AlignVCenter);
+    lay->addStretch(1);
+    return w;
+}
+
+QWidget *MainWindow::makeNicActionCell(const QString &ip, bool isPrimary)
+{
+    auto *w = new QWidget;
+    auto *lay = new QHBoxLayout(w);
+    lay->setContentsMargins(4, 0, 10, 0);
+    lay->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    if (isPrimary) {
+        auto *lockIcon = new QLabel;
+        lockIcon->setFixedSize(14, 14);
+        lockIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/lock_protected.svg"), 14));
+        auto *lab = new QLabel(QStringLiteral("主网卡保护"));
+        lab->setStyleSheet(QStringLiteral("color:#64748B;font-size:12px;background:transparent;"));
+        lay->addWidget(lockIcon, 0, Qt::AlignVCenter);
+        lay->addWidget(lab, 0, Qt::AlignVCenter);
+    } else {
+        auto *delBtn = new QPushButton;
+        delBtn->setObjectName(QStringLiteral("FileActDel"));
+        delBtn->setFixedSize(28, 28);
+        delBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/trash_delete.svg"), 15));
+        delBtn->setIconSize(QSize(15, 15));
+        delBtn->setCursor(Qt::PointingHandCursor);
+        delBtn->setToolTip(QStringLiteral("删除该绑定 IP"));
+        connect(delBtn, &QPushButton::clicked, this, [this, ip] { deleteNicIp(ip); });
+        lay->addWidget(delBtn);
+    }
+    return w;
 }
 
 QWidget *MainWindow::makeFileNameCell(const QString &fileName)
@@ -2244,31 +2527,20 @@ void MainWindow::clearLogs()
 void MainWindow::onIpSelectionChanged(int)
 {
     updateShareUrlUi();
+    // ponytail: 全表重刷以更新「HTTP 当前选用」；用标志防重入
+    static bool reenter = false;
+    if (reenter || !m_nicTable)
+        return;
+    reenter = true;
+    refreshNics();
+    reenter = false;
 }
 
 bool MainWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    if (watched == m_uacBadge && event->type() == QEvent::MouseButtonRelease) {
-        if (NicManager::isElevated()) {
-            updateUacBadge();
-            showToast(QStringLiteral("当前已是管理员权限（真实 UAC 状态）"));
-            return true;
-        }
-        const auto ret = QMessageBox::question(
-            this, QStringLiteral("请求管理员权限"),
-            QStringLiteral("追加/解绑网卡 IP 需要管理员权限。\n"
-                           "将弹出 Windows UAC 对话框，同意后以管理员身份重新启动本程序。\n\n"
-                           "是否继续？"));
-        if (ret != QMessageBox::Yes)
-            return true;
-        QString err;
-        if (NicManager::requestElevation(&err)) {
-            // 新的管理员实例已启动，退出当前标准权限进程
-            QTimer::singleShot(0, qApp, &QCoreApplication::quit);
-        } else {
-            showToast(err.isEmpty() ? QStringLiteral("提权失败") : err);
-            updateUacBadge();
-        }
+    if ((watched == m_uacBadge || watched == m_nicUacBadge)
+        && event->type() == QEvent::MouseButtonRelease) {
+        requestUacElevation();
         return true;
     }
 
@@ -2291,7 +2563,9 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                     || w->objectName() == QLatin1String("RunDot")
                     || w->objectName() == QLatin1String("Uac")
                     || w->objectName() == QLatin1String("UacOff")
-                    || w->objectName() == QLatin1String("UacText"))
+                    || w->objectName() == QLatin1String("UacText")
+                    || w->objectName() == QLatin1String("NicUac")
+                    || w->objectName() == QLatin1String("NicUacOff"))
                     return QMainWindow::eventFilter(watched, event);
             }
             m_dragging = true;
