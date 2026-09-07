@@ -67,16 +67,23 @@ static QString fmtBytes(qint64 n)
     return QString::number(v, 'f', i == 0 ? 0 : 1) + QLatin1Char(' ') + QLatin1String(u[i]);
 }
 
-static QIcon loadSvgIcon(const QString &resPath, int size)
+static QPixmap loadSvgPixmap(const QString &resPath, int size)
 {
     QSvgRenderer renderer(resPath);
-    QPixmap pm(size, size);
+    const qreal dpr = qApp ? qApp->devicePixelRatio() : 1.0;
+    QPixmap pm(qMax(1, int(size * dpr)), qMax(1, int(size * dpr)));
     pm.fill(Qt::transparent);
+    pm.setDevicePixelRatio(dpr);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, true);
     p.setRenderHint(QPainter::SmoothPixmapTransform, true);
     renderer.render(&p, QRectF(0, 0, size, size));
-    return QIcon(pm);
+    return pm;
+}
+
+static QIcon loadSvgIcon(const QString &resPath, int size)
+{
+    return QIcon(loadSvgPixmap(resPath, size));
 }
 
 static QIcon makeWinChromeIcon(int kind)
@@ -991,8 +998,8 @@ void MainWindow::buildUi()
     qrTitle->setStyleSheet(QStringLiteral(
         "color:#e2e8f0;font-size:12px;font-weight:700;letter-spacing:0.5px;background:transparent;"));
     auto *qrHintIcon = new QLabel;
-    qrHintIcon->setFixedSize(12, 12);
-    qrHintIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/smartphone.svg"), 12).pixmap(12, 12));
+    qrHintIcon->setFixedSize(14, 14);
+    qrHintIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/smartphone.svg"), 14));
     auto *qrHint = new QLabel(QStringLiteral("摄像头对准扫码"));
     qrHint->setStyleSheet(QStringLiteral("color:#94a3b8;font-size:11px;background:transparent;"));
     auto *qrHintWrap = new QWidget;
@@ -1018,16 +1025,17 @@ void MainWindow::buildUi()
 
     auto *scanTip = new QWidget;
     auto *scanTipLay = new QHBoxLayout(scanTip);
-    scanTipLay->setContentsMargins(0, 2, 0, 2);
-    scanTipLay->setSpacing(6);
+    scanTipLay->setContentsMargins(0, 4, 0, 4);
+    scanTipLay->setSpacing(8);
     auto *scanPhoneIcon = new QLabel;
-    scanPhoneIcon->setFixedSize(14, 14);
-    scanPhoneIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/smartphone.svg"), 14).pixmap(14, 14));
+    scanPhoneIcon->setFixedSize(16, 16);
+    scanPhoneIcon->setAlignment(Qt::AlignCenter);
+    scanPhoneIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/smartphone.svg"), 16));
     auto *scanTipText = new QLabel(QStringLiteral("手机扫码直连 · 手机、平板或局域网客户机扫码即可打开提货页"));
-    scanTipText->setStyleSheet(QStringLiteral("color:#94a3b8;font-size:11px;background:transparent;"));
+    scanTipText->setStyleSheet(QStringLiteral("color:#cbd5e1;font-size:11px;background:transparent;"));
     scanTipText->setWordWrap(true);
-    scanTipLay->addWidget(scanPhoneIcon, 0, Qt::AlignTop);
-    scanTipLay->addWidget(scanTipText, 1);
+    scanTipLay->addWidget(scanPhoneIcon, 0, Qt::AlignVCenter);
+    scanTipLay->addWidget(scanTipText, 1, Qt::AlignVCenter);
     qrLay->addWidget(scanTip);
 
     qrLay->addWidget(new QLabel(QStringLiteral("共享文件快捷提货")));
