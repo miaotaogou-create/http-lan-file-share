@@ -31,6 +31,7 @@
     <file>icons/file_document.svg</file>
     <file>icons/terminal_cli.svg</file>
     <file>icons/download_icon.svg</file>
+    <file>icons/download_icon_cyan.svg</file>
     <file>icons/trash_delete.svg</file>
   </qresource>
 </RCC>

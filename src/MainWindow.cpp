@@ -38,7 +38,6 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QSizePolicy>
-#include <QFrame>
 #include <QScrollArea>
 #include <QScrollBar>
 #include <QSpinBox>
@@ -556,6 +555,38 @@ QPushButton#FileActDel {
 }
 QPushButton#FileActDel:hover {
   background: rgba(239, 68, 68, 0.15);
+}
+QPushButton#PriorityDl {
+  background: rgba(8, 145, 178, 0.28);
+  border: 1px solid rgba(34, 211, 238, 0.40);
+  border-radius: 4px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 0 8px;
+  min-height: 26px;
+  max-height: 26px;
+}
+QPushButton#PriorityDl:hover {
+  background: rgba(8, 145, 178, 0.45);
+  border-color: #22d3ee;
+  color: #a5f3fc;
+}
+QFrame#PriorityCard {
+  background: #070d18;
+  border: 1px solid #1f324f;
+  border-radius: 8px;
+}
+QFrame#PriorityCard:hover {
+  border: 1px solid rgba(34, 211, 238, 0.45);
+}
+QLabel#PriorityEmpty {
+  color: #64748b;
+  font-size: 12px;
+  background: #070d18;
+  border: 1px dashed #1f324f;
+  border-radius: 8px;
+  padding: 14px;
 }
 QLineEdit#FolderPathEdit {
   font-family: Consolas, "Cascadia Mono", "Courier New", monospace;
@@ -1103,14 +1134,14 @@ void MainWindow::buildUi()
     qrLay->addWidget(scanTip);
 
     auto *pkgHead = new QHBoxLayout;
-    pkgHead->setContentsMargins(0, 4, 0, 0);
+    pkgHead->setContentsMargins(0, 8, 0, 0);
     pkgHead->setSpacing(6);
     auto *pkgIcon = new QLabel;
     pkgIcon->setFixedSize(14, 14);
     pkgIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/package_box_cyan.svg"), 14));
     auto *pkgTitle = new QLabel(QStringLiteral("共享文件快捷提货"));
     pkgTitle->setStyleSheet(QStringLiteral(
-        "color:#cbd5e1;font-size:12px;font-weight:600;background:transparent;"));
+        "color:#e2e8f0;font-size:12px;font-weight:600;background:transparent;"));
     auto *readyBadge = new QLabel(QStringLiteral("就绪共享"));
     readyBadge->setStyleSheet(QStringLiteral(
         "color:#34d399;background:rgba(6,78,59,0.55);border:1px solid rgba(16,185,129,0.45);"
@@ -1121,23 +1152,69 @@ void MainWindow::buildUi()
     pkgHead->addWidget(readyBadge, 0, Qt::AlignVCenter);
     qrLay->addLayout(pkgHead);
 
-    auto *priorityBox = new QFrame;
-    priorityBox->setStyleSheet(QStringLiteral(
-        "QFrame{background:#070d18;border:1px solid #1f324f;border-radius:8px;}"));
-    auto *priorityLay = new QHBoxLayout(priorityBox);
+    m_priorityEmpty = new QLabel(QStringLiteral("暂无打包产物"));
+    m_priorityEmpty->setObjectName(QStringLiteral("PriorityEmpty"));
+    m_priorityEmpty->setAlignment(Qt::AlignCenter);
+    qrLay->addWidget(m_priorityEmpty);
+
+    m_priorityCard = new QFrame;
+    m_priorityCard->setObjectName(QStringLiteral("PriorityCard"));
+    auto *priorityLay = new QHBoxLayout(m_priorityCard);
     priorityLay->setContentsMargins(10, 10, 10, 10);
     priorityLay->setSpacing(10);
-    auto *priorityIcon = new QLabel;
-    priorityIcon->setObjectName(QStringLiteral("PriorityIcon"));
-    priorityIcon->setFixedSize(22, 22);
-    priorityIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/box_cardboard.svg"), 22));
-    m_priorityFileLabel = new QLabel(QStringLiteral("暂无打包产物"));
-    m_priorityFileLabel->setStyleSheet(QStringLiteral(
-        "color:#e2e8f0;font-size:12px;font-family:Consolas,\"Cascadia Mono\",monospace;background:transparent;"));
-    m_priorityFileLabel->setWordWrap(true);
-    priorityLay->addWidget(priorityIcon, 0, Qt::AlignVCenter);
-    priorityLay->addWidget(m_priorityFileLabel, 1, Qt::AlignVCenter);
-    qrLay->addWidget(priorityBox);
+
+    m_priorityIcon = new QLabel;
+    m_priorityIcon->setFixedSize(22, 22);
+    m_priorityIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/box_cardboard.svg"), 22));
+
+    auto *textCol = new QWidget;
+    auto *textLay = new QVBoxLayout(textCol);
+    textLay->setContentsMargins(0, 0, 0, 0);
+    textLay->setSpacing(2);
+    m_priorityName = new QLabel;
+    m_priorityName->setStyleSheet(QStringLiteral(
+        "color:#e2e8f0;font-size:12px;font-weight:600;font-family:Consolas,\"Cascadia Mono\",monospace;"
+        "background:transparent;"));
+    m_priorityName->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_prioritySize = new QLabel;
+    m_prioritySize->setStyleSheet(QStringLiteral(
+        "color:#94a3b8;font-size:10px;font-family:Consolas,\"Cascadia Mono\",monospace;background:transparent;"));
+    textLay->addWidget(m_priorityName);
+    textLay->addWidget(m_prioritySize);
+
+    m_priorityActs = new QWidget;
+    auto *actLay = new QHBoxLayout(m_priorityActs);
+    actLay->setContentsMargins(0, 0, 0, 0);
+    actLay->setSpacing(6);
+    auto *cliBtn = new QPushButton;
+    cliBtn->setObjectName(QStringLiteral("FileActCli"));
+    cliBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/terminal_cli.svg"), 14));
+    cliBtn->setIconSize(QSize(14, 14));
+    cliBtn->setCursor(Qt::PointingHandCursor);
+    cliBtn->setToolTip(QStringLiteral("复制 curl 下载命令"));
+    auto *dlBtn = new QPushButton(QStringLiteral("下载"));
+    dlBtn->setObjectName(QStringLiteral("PriorityDl"));
+    dlBtn->setIcon(loadSvgIcon(QStringLiteral(":/icons/download_icon_cyan.svg"), 14));
+    dlBtn->setIconSize(QSize(14, 14));
+    dlBtn->setCursor(Qt::PointingHandCursor);
+    dlBtn->setToolTip(QStringLiteral("直接下载此文件"));
+    actLay->addWidget(cliBtn);
+    actLay->addWidget(dlBtn);
+
+    priorityLay->addWidget(m_priorityIcon, 0, Qt::AlignVCenter);
+    priorityLay->addWidget(textCol, 1, Qt::AlignVCenter);
+    priorityLay->addWidget(m_priorityActs, 0, Qt::AlignVCenter);
+    m_priorityCard->setVisible(false);
+    qrLay->addWidget(m_priorityCard);
+
+    connect(cliBtn, &QPushButton::clicked, this, [this] {
+        if (!m_priorityName->text().isEmpty())
+            copyCurlForName(m_priorityName->text());
+    });
+    connect(dlBtn, &QPushButton::clicked, this, [this] {
+        if (!m_priorityPath.isEmpty())
+            downloadFileByPath(m_priorityPath, m_priorityName->text());
+    });
 
     topRow->addWidget(httpCard, 7);
     topRow->addWidget(qrCard, 5);
@@ -1710,7 +1787,9 @@ void MainWindow::refreshFiles()
     m_portalTable->setRowCount(0);
     qint64 total = 0;
     int shown = 0;
-    QString priority;
+    QString priorityPath;
+    QString priorityName;
+    qint64 prioritySize = 0;
 
     for (const QFileInfo &fi : infos) {
         if (!filter.isEmpty() && !fi.fileName().contains(filter, Qt::CaseInsensitive))
@@ -1737,23 +1816,34 @@ void MainWindow::refreshFiles()
         m_portalTable->setItem(pr, 1, new QTableWidgetItem(fmtBytes(fi.size())));
         m_portalTable->setItem(pr, 2, new QTableWidgetItem(fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
 
-        if (priority.isEmpty() || isArchiveName(fi.fileName()))
-            priority = QStringLiteral("%1  (%2)").arg(fi.fileName(), fmtBytes(fi.size()));
+        if (priorityPath.isEmpty() || isArchiveName(fi.fileName())) {
+            priorityPath = fi.absoluteFilePath();
+            priorityName = fi.fileName();
+            prioritySize = fi.size();
+        }
         ++shown;
     }
 
     m_fileStats->setText(QStringLiteral("%1 个文件 · %2").arg(shown).arg(fmtBytes(total)));
-    m_priorityFileLabel->setText(priority.isEmpty() ? QStringLiteral("暂无打包产物") : priority);
-    if (auto *icon = m_priorityFileLabel->parentWidget()
-                         ? m_priorityFileLabel->parentWidget()->findChild<QLabel *>(QStringLiteral("PriorityIcon"))
-                         : nullptr) {
-        icon->setPixmap(loadSvgPixmap(priority.isEmpty() ? QStringLiteral(":/icons/package_box_cyan.svg")
-                                                         : QStringLiteral(":/icons/box_cardboard.svg"),
-                                      22));
-    }
+    updatePriorityPickup(priorityPath, priorityName, prioritySize);
     if (m_portalCount)
         m_portalCount->setText(QString::number(shown));
     fitTableHeight(m_fileTable);
+}
+
+void MainWindow::updatePriorityPickup(const QString &path, const QString &name, qint64 size)
+{
+    m_priorityPath = path;
+    const bool has = !path.isEmpty();
+    if (m_priorityEmpty)
+        m_priorityEmpty->setVisible(!has);
+    if (m_priorityCard)
+        m_priorityCard->setVisible(has);
+    if (!has)
+        return;
+    m_priorityName->setText(name);
+    m_prioritySize->setText(fmtBytes(size));
+    m_priorityIcon->setPixmap(loadSvgPixmap(QStringLiteral(":/icons/box_cardboard.svg"), 22));
 }
 
 QWidget *MainWindow::makeFileActionBar(const QString &path, const QString &name)
