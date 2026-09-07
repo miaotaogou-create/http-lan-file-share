@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "SelfCheckDialog.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -1354,28 +1355,10 @@ void MainWindow::openPortalInBrowser()
 
 void MainWindow::selfCheck()
 {
-    if (!m_running) {
-        QMessageBox::information(this, QStringLiteral("自检"),
-                                 QStringLiteral("服务当前处于停止状态。请先启动 HTTP 共享。"));
-        return;
-    }
-    auto *nam = new QNetworkAccessManager(this);
-    const QUrl url(QStringLiteral("http://127.0.0.1:%1/").arg(m_portSpin->value()));
-    QNetworkRequest req(url);
-    auto *reply = nam->head(req);
-    connect(reply, &QNetworkReply::finished, this, [this, reply, nam] {
-        reply->deleteLater();
-        nam->deleteLater();
-        if (reply->error() == QNetworkReply::NoError) {
-            addLog(QStringLiteral("check"),
-                   QStringLiteral("自检通过: GET http://127.0.0.1:%1/ -> HTTP 200").arg(m_portSpin->value()));
-            QMessageBox::information(this, QStringLiteral("自检"),
-                                     QStringLiteral("本机回环检测通过。\n局域网地址: %1").arg(currentShareUrl()));
-        } else {
-            addLog(QStringLiteral("check"), QStringLiteral("自检失败: %1").arg(reply->errorString()));
-            QMessageBox::warning(this, QStringLiteral("自检"), reply->errorString());
-        }
-    });
+    SelfCheckDialog dlg(m_running, static_cast<quint16>(m_portSpin->value()), selectedIp(), this);
+    dlg.exec();
+    if (m_running)
+        addLog(QStringLiteral("check"), QStringLiteral("已执行网络与环境自检"));
 }
 
 void MainWindow::refreshNics()

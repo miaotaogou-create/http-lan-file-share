@@ -20,6 +20,7 @@ set(APP_SOURCES
   src/NicManager.cpp
   src/ActivityLogModel.cpp
   src/QrCodeWidget.cpp
+  src/SelfCheckDialog.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 
