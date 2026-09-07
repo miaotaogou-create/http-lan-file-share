@@ -248,9 +248,10 @@ QWidget *WebDeliveryView::createSearchBar()
     m_searchEdit->setClearButtonEnabled(true);
     m_searchEdit->setStyleSheet(QStringLiteral(
         "QLineEdit {"
-        "  background-color:#061121; border:1px solid #152945; border-radius:6px;"
+        "  background-color:#0B1627; border:1px solid #2A4A6E; border-radius:8px;"
         "  color:#E2E8F0; font-size:13px; padding:0 12px;"
         "}"
+        "QLineEdit:hover { border-color:#3B6A96; }"
         "QLineEdit:focus { border:1px solid #00D2FF; }"));
     connect(m_searchEdit, &QLineEdit::textChanged, this, &WebDeliveryView::onSearchTextChanged);
 
