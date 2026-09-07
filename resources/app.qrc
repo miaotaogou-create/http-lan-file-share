@@ -5,5 +5,7 @@
     <file>icons/share_app_icon.svg</file>
     <file>icons/chevron_down.svg</file>
     <file>icons/chevron_down.png</file>
+    <file>icons/chevron_up.svg</file>
+    <file>icons/chevron_up.png</file>
   </qresource>
 </RCC>

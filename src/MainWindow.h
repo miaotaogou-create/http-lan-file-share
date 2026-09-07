@@ -14,6 +14,7 @@ class QPushButton;
 class QTableWidget;
 class QListWidget;
 class QStackedWidget;
+class QToolButton;
 class QFileSystemWatcher;
 class QWidget;
 
@@ -26,6 +27,7 @@ public:
 
 protected:
     bool eventFilter(QObject *watched, QEvent *event) override;
+    void changeEvent(QEvent *event) override;
 
 private slots:
     void toggleServer();
@@ -57,6 +59,7 @@ private:
     void showToast(const QString &msg);
     void updateTabChrome(int index);
     void updateUacBadge();
+    void updateMaxButtonIcon();
     void fitTableHeight(QTableWidget *table);
     QString currentShareUrl() const;
     QString selectedIp() const;
@@ -68,6 +71,7 @@ private:
     QFileSystemWatcher *m_watcher = nullptr;
 
     QWidget *m_titleBar = nullptr;
+    QToolButton *m_maxBtn = nullptr;
     QStackedWidget *m_stack = nullptr;
     QPushButton *m_tabManager = nullptr;
     QPushButton *m_tabPortal = nullptr;

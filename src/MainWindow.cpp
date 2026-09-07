@@ -5,6 +5,7 @@
 #include "ActivityLogModel.h"
 #include "QrCodeWidget.h"
 
+#include <QAbstractSpinBox>
 #include <QAbstractItemView>
 #include <QApplication>
 #include <QClipboard>
@@ -65,17 +66,22 @@ static QString fmtBytes(qint64 n)
 
 static QIcon makeWinChromeIcon(int kind)
 {
-    // 0 最小化  1 最大化  2 关闭 — 更接近 Win11 细线图标
+    // 0 最小化  1 最大化  2 关闭  3 还原
     QPixmap pm(36, 28);
     pm.fill(Qt::transparent);
     QPainter p(&pm);
     p.setRenderHint(QPainter::Antialiasing, false);
-    const QColor c(203, 213, 225); // slate-300
+    const QColor c(203, 213, 225);
     p.setPen(QPen(c, 1));
     if (kind == 0) {
         p.drawLine(13, 14, 23, 14);
     } else if (kind == 1) {
         p.drawRect(13, 9, 10, 10);
+    } else if (kind == 3) {
+        // 还原：两层错开方框
+        p.drawRect(15, 8, 9, 9);
+        p.fillRect(12, 11, 9, 9, QColor(9, 17, 30)); // 标题栏底色挖空
+        p.drawRect(12, 11, 9, 9);
     } else {
         p.drawLine(13, 9, 23, 19);
         p.drawLine(23, 9, 13, 19);
@@ -212,9 +218,69 @@ QLineEdit, QSpinBox {
   background: #070d18;
   border: 1px solid #1f324f;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 4px 22px 4px 8px;
   color: #e2e8f0;
   selection-background-color: #059669;
+  min-height: 26px;
+}
+QSpinBox#PortSpin {
+  color: #67e8f9;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+QSpinBox::up-button, QSpinBox::down-button {
+  background: #122035;
+  border: none;
+  width: 18px;
+}
+QSpinBox::up-button {
+  subcontrol-origin: border;
+  subcontrol-position: top right;
+  margin: 1px 1px 0 0;
+  border-top-right-radius: 7px;
+}
+QSpinBox::down-button {
+  subcontrol-origin: border;
+  subcontrol-position: bottom right;
+  margin: 0 1px 1px 0;
+  border-bottom-right-radius: 7px;
+}
+QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+  background: #1a2f50;
+}
+QSpinBox::up-arrow {
+  image: url(:/icons/chevron_up.png);
+  width: 9px;
+  height: 9px;
+}
+QSpinBox::down-arrow {
+  image: url(:/icons/chevron_down.png);
+  width: 9px;
+  height: 9px;
+}
+QHeaderView::section {
+  background: #0e1b2f;
+  color: #94a3b8;
+  border: none;
+  border-right: 1px solid #1b2f4d;
+  border-bottom: 1px solid #1b2f4d;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+QHeaderView::section:last {
+  border-right: none;
+}
+QTableCornerButton::section {
+  background: #0e1b2f;
+  border: none;
+}
+QTableWidget {
+  background: #070e1b;
+  border: 1px solid #1a2b45;
+  border-radius: 8px;
+  gridline-color: #14233a;
+  selection-background-color: #0f2139;
+  color: #e2e8f0;
+  outline: 0;
 }
 QPushButton {
   background: #122035;
@@ -378,13 +444,6 @@ QPushButton#SelfCheckBtn:hover {
   background: rgba(34, 211, 238, 0.10);
   border: 1px solid #67e8f9;
   color: #67e8f9;
-}
-QTableWidget {
-  background: #070e1b;
-  border: 1px solid #1a2b45;
-  border-radius: 8px;
-  gridline-color: #14233a;
-  selection-background-color: #0f2139;
 }
 QListWidget {
   background: #070d18;
@@ -687,7 +746,7 @@ void MainWindow::buildUi()
     tabsLay->addWidget(m_tabLogs, 0, Qt::AlignVCenter);
 
     auto *minBtn = makeWinChromeBtn(m_titleBar, 0);
-    auto *maxBtn = makeWinChromeBtn(m_titleBar, 1);
+    m_maxBtn = makeWinChromeBtn(m_titleBar, 1);
     auto *closeBtn = makeWinChromeBtn(m_titleBar, 2);
     auto *chrome = new QWidget;
     chrome->setFixedHeight(28);
@@ -695,7 +754,7 @@ void MainWindow::buildUi()
     chromeLay->setContentsMargins(0, 0, 0, 0);
     chromeLay->setSpacing(0);
     chromeLay->addWidget(minBtn);
-    chromeLay->addWidget(maxBtn);
+    chromeLay->addWidget(m_maxBtn);
     chromeLay->addWidget(closeBtn);
 
     auto *rightPanel = new QWidget;
@@ -715,15 +774,12 @@ void MainWindow::buildUi()
     connect(m_tabPortal, &QPushButton::clicked, this, [this] { switchView(1); });
     connect(m_tabLogs, &QPushButton::clicked, this, [this] { switchView(2); });
     connect(minBtn, &QToolButton::clicked, this, &QWidget::showMinimized);
-    connect(maxBtn, &QToolButton::clicked, this, [this, maxBtn] {
-        if (isMaximized()) {
+    connect(m_maxBtn, &QToolButton::clicked, this, [this] {
+        if (isMaximized())
             showNormal();
-            maxBtn->setIcon(makeWinChromeIcon(1));
-        } else {
+        else
             showMaximized();
-            // 还原态画成双框感：仍用方框即可
-            maxBtn->setIcon(makeWinChromeIcon(1));
-        }
+        updateMaxButtonIcon();
     });
     connect(closeBtn, &QToolButton::clicked, this, &QWidget::close);
 
@@ -775,8 +831,11 @@ void MainWindow::buildUi()
     auto *portRow = new QHBoxLayout;
     portRow->addWidget(new QLabel(QStringLiteral("服务端口:")));
     m_portSpin = new QSpinBox;
+    m_portSpin->setObjectName(QStringLiteral("PortSpin"));
     m_portSpin->setRange(1, 65535);
     m_portSpin->setValue(8899);
+    m_portSpin->setButtonSymbols(QAbstractSpinBox::UpDownArrows);
+    m_portSpin->setFixedWidth(110);
     portRow->addWidget(m_portSpin);
     for (int p : {8899, 8080, 8000, 9000}) {
         auto *b = new QPushButton(QString::number(p));
@@ -1108,6 +1167,20 @@ void MainWindow::fitTableHeight(QTableWidget *table)
     // 边框余量
     h += 4;
     table->setFixedHeight(h);
+}
+
+void MainWindow::updateMaxButtonIcon()
+{
+    if (!m_maxBtn)
+        return;
+    m_maxBtn->setIcon(makeWinChromeIcon(isMaximized() ? 3 : 1));
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+    if (event->type() == QEvent::WindowStateChange)
+        updateMaxButtonIcon();
 }
 
 void MainWindow::updateUacBadge()
@@ -1599,6 +1672,7 @@ bool MainWindow::eventFilter(QObject *watched, QEvent *event)
                 showNormal();
             else
                 showMaximized();
+            updateMaxButtonIcon();
             return true;
         }
         if (event->type() == QEvent::MouseButtonPress && me->button() == Qt::LeftButton) {
