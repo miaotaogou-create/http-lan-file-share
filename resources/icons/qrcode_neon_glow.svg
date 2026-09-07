@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="64" height="64" fill="none">
+  <defs>
+    <filter id="neon-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.2" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#neon-glow)" transform="translate(2, 2)">
+    <rect x="3" y="3" width="6.8" height="6.8" rx="2" stroke="#00e5ff" stroke-width="1.8" />
+    <rect x="5.4" y="5.4" width="2" height="2" rx="0.6" fill="#70f3ff" />
+    <rect x="14.2" y="3" width="6.8" height="6.8" rx="2" stroke="#00e5ff" stroke-width="1.8" />
+    <rect x="16.6" y="5.4" width="2" height="2" rx="0.6" fill="#70f3ff" />
+    <rect x="3" y="14.2" width="6.8" height="6.8" rx="2" stroke="#00e5ff" stroke-width="1.8" />
+    <rect x="5.4" y="16.6" width="2" height="2" rx="0.6" fill="#70f3ff" />
+    <rect x="10.8" y="3" width="1.8" height="2.5" rx="0.9" fill="#00e5ff" />
+    <path d="M11.7 6.8V11H7.5" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="3.2" y="11" width="2.2" height="1.8" rx="0.9" fill="#00e5ff" />
+    <rect x="14.5" y="11" width="3.2" height="1.8" rx="0.9" fill="#00e5ff" />
+    <rect x="10.8" y="14" width="2" height="2" rx="1" fill="#00e5ff" />
+    <rect x="10.8" y="17.8" width="2" height="2.8" rx="1" fill="#00e5ff" />
+    <path d="M15 14.5H18.2C19.2 14.5 19.8 15.1 19.8 16.1V17.2" stroke="#00e5ff" stroke-width="2.2" stroke-linecap="round" />
+    <circle cx="19.8" cy="19.8" r="1.1" fill="#70f3ff" />
+  </g>
+</svg>

@@ -15,5 +15,7 @@
     <file>icons/refresh_cw_cyan.svg</file>
     <file>icons/folder_filled_yellow.svg</file>
     <file>icons/search_browse.svg</file>
+    <file>icons/qrcode_icon.svg</file>
+    <file>icons/qrcode_neon_glow.svg</file>
   </qresource>
 </RCC>

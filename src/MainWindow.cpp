@@ -1017,7 +1017,24 @@ void MainWindow::buildUi()
     auto *qrCard = makeCard(managerPage);
     auto *qrLay = new QVBoxLayout(qrCard);
     qrLay->setContentsMargins(16, 16, 16, 16);
-    qrLay->addWidget(new QLabel(QStringLiteral("扫码提货 / 扫码下载")));
+    qrLay->setSpacing(10);
+
+    auto *qrHead = new QHBoxLayout;
+    qrHead->setSpacing(8);
+    auto *qrTitleIcon = new QLabel;
+    qrTitleIcon->setFixedSize(16, 16);
+    qrTitleIcon->setPixmap(loadSvgIcon(QStringLiteral(":/icons/qrcode_icon.svg"), 16).pixmap(16, 16));
+    auto *qrTitle = new QLabel(QStringLiteral("扫码提货 / 扫码下载"));
+    qrTitle->setStyleSheet(QStringLiteral(
+        "color:#e2e8f0;font-size:12px;font-weight:700;letter-spacing:0.5px;background:transparent;"));
+    auto *qrHint = new QLabel(QStringLiteral("摄像头对准扫码"));
+    qrHint->setStyleSheet(QStringLiteral("color:#94a3b8;font-size:11px;background:transparent;"));
+    qrHead->addWidget(qrTitleIcon, 0, Qt::AlignVCenter);
+    qrHead->addWidget(qrTitle, 0, Qt::AlignVCenter);
+    qrHead->addStretch(1);
+    qrHead->addWidget(qrHint, 0, Qt::AlignVCenter);
+    qrLay->addLayout(qrHead);
+
     m_qr = new QrCodeWidget;
     m_qr->setMinimumHeight(200);
     qrLay->addWidget(m_qr, 1);
