@@ -32,6 +32,9 @@
 #include <QSvgRenderer>
 #include <QPainter>
 #include <QPushButton>
+#include <QSizePolicy>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSpinBox>
 #include <QStackedWidget>
 #include <QStatusBar>
@@ -334,6 +337,63 @@ QLabel#RunDot {
   min-height: 6px;
   max-height: 6px;
 }
+QScrollBar:vertical {
+  background: #070e1a;
+  width: 10px;
+  margin: 2px;
+  border: none;
+}
+QScrollBar::handle:vertical {
+  background: #1a2f4d;
+  min-height: 40px;
+  border-radius: 5px;
+  border: 1px solid #243b5c;
+}
+QScrollBar::handle:vertical:hover {
+  background: #25456e;
+}
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+  height: 0px;
+  border: none;
+  background: none;
+}
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+  background: transparent;
+}
+QScrollBar:horizontal {
+  background: #070e1a;
+  height: 10px;
+  margin: 2px;
+  border: none;
+}
+QScrollBar::handle:horizontal {
+  background: #1a2f4d;
+  min-width: 40px;
+  border-radius: 5px;
+  border: 1px solid #243b5c;
+}
+QScrollBar::handle:horizontal:hover {
+  background: #25456e;
+}
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+  width: 0px;
+  border: none;
+  background: none;
+}
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+  background: transparent;
+}
+QScrollArea {
+  background: transparent;
+  border: none;
+}
+QScrollArea > QWidget > QWidget {
+  background: transparent;
+}
 )QSS"));
 }
 
@@ -361,25 +421,16 @@ void MainWindow::buildUi()
     tb->setContentsMargins(10, 6, 8, 6);
     tb->setSpacing(8);
 
-    // 分享图标
+    // 分享图标（资源 SVG）
     auto *appIcon = new QLabel;
-    appIcon->setFixedSize(24, 24);
+    appIcon->setFixedSize(26, 26);
     {
-        QPixmap pm(24, 24);
+        QSvgRenderer renderer(QStringLiteral(":/icons/share_app_icon.svg"));
+        QPixmap pm(26, 26);
         pm.fill(Qt::transparent);
         QPainter p(&pm);
         p.setRenderHint(QPainter::Antialiasing);
-        p.setBrush(QColor(16, 185, 129, 50));
-        p.setPen(QPen(QColor(52, 211, 153, 120), 1));
-        p.drawRoundedRect(0, 0, 23, 23, 6, 6);
-        p.setPen(QPen(QColor(52, 211, 153), 1.6));
-        p.setBrush(QColor(52, 211, 153));
-        // 简易 share 节点图
-        p.drawEllipse(QPointF(8, 7), 2.2, 2.2);
-        p.drawEllipse(QPointF(16, 7), 2.2, 2.2);
-        p.drawEllipse(QPointF(12, 16), 2.2, 2.2);
-        p.drawLine(QPointF(9.5, 8.5), QPointF(11, 14));
-        p.drawLine(QPointF(14.5, 8.5), QPointF(13, 14));
+        renderer.render(&p, QRectF(0, 0, 26, 26));
         appIcon->setPixmap(pm);
     }
 
@@ -483,8 +534,15 @@ void MainWindow::buildUi()
     m_stack = new QStackedWidget;
     root->addWidget(m_stack, 1);
 
-    // ===== View 0: Manager =====
+    // ===== View 0: Manager（整页可滚）=====
+    auto *managerScroll = new QScrollArea;
+    managerScroll->setWidgetResizable(true);
+    managerScroll->setFrameShape(QFrame::NoFrame);
+    managerScroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    managerScroll->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+
     auto *managerPage = new QWidget;
+    managerScroll->setWidget(managerPage);
     auto *mv = new QVBoxLayout(managerPage);
     mv->setContentsMargins(16, 16, 16, 16);
     mv->setSpacing(12);
@@ -618,6 +676,9 @@ void MainWindow::buildUi()
     m_fileTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_fileTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_fileTable->verticalHeader()->setVisible(false);
+    m_fileTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_fileTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_fileTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     fileLay->addWidget(m_fileTable);
 
     auto *fileActs = new QHBoxLayout;
@@ -665,14 +726,18 @@ void MainWindow::buildUi()
     m_nicTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     m_nicTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     m_nicTable->verticalHeader()->setVisible(false);
+    m_nicTable->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_nicTable->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    m_nicTable->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     nicLay->addWidget(m_nicTable);
     mv->addWidget(nicCard);
 
     auto *footer = new QLabel(QStringLiteral("Windows x64 Native Qt/HTTP Core  ·  局域网千兆全双工  ·  开源项目"));
     footer->setObjectName(QStringLiteral("Muted"));
     mv->addWidget(footer);
+    mv->addStretch(0);
 
-    m_stack->addWidget(managerPage);
+    m_stack->addWidget(managerScroll);
 
     // ===== View 1: Portal preview =====
     auto *portalPage = new QWidget;
@@ -775,6 +840,23 @@ void MainWindow::updateTabChrome(int index)
         b->style()->unpolish(b);
         b->style()->polish(b);
     }
+}
+
+void MainWindow::fitTableHeight(QTableWidget *table)
+{
+    if (!table)
+        return;
+    int h = table->horizontalHeader()->height() + 2;
+    const int rows = table->rowCount();
+    if (rows == 0) {
+        h += 48;
+    } else {
+        for (int i = 0; i < rows; ++i)
+            h += qMax(table->rowHeight(i), 28);
+    }
+    // 边框余量
+    h += 4;
+    table->setFixedHeight(h);
 }
 
 void MainWindow::updateUacBadge()
@@ -1027,6 +1109,7 @@ void MainWindow::refreshNics()
     });
 
     updateShareUrlUi();
+    fitTableHeight(m_nicTable);
 }
 
 QString MainWindow::adapterNameForIp(const QString &ip) const
@@ -1144,6 +1227,7 @@ void MainWindow::refreshFiles()
     m_priorityFileLabel->setText(priority.isEmpty() ? QStringLiteral("暂无打包产物") : priority);
     if (m_portalCount)
         m_portalCount->setText(QString::number(shown));
+    fitTableHeight(m_fileTable);
 }
 
 void MainWindow::uploadLocalFiles()

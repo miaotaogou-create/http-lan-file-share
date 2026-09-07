@@ -57,6 +57,7 @@ private:
     void showToast(const QString &msg);
     void updateTabChrome(int index);
     void updateUacBadge();
+    void fitTableHeight(QTableWidget *table);
     QString currentShareUrl() const;
     QString selectedIp() const;
     QString adapterNameForIp(const QString &ip) const;
