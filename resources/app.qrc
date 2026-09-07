@@ -48,5 +48,6 @@
     <file>icons/lock_protected.svg</file>
     <file>icons/plus_add.svg</file>
     <file>icons/arrow_left.svg</file>
+    <file>icons/clock_outline.svg</file>
   </qresource>
 </RCC>

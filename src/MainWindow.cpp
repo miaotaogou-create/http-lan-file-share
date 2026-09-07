@@ -3,6 +3,7 @@
 #include "StatusBadgeWidget.h"
 #include "DropUploadArea.h"
 #include "WebDeliveryView.h"
+#include "LogMonitorView.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -1652,22 +1653,8 @@ void MainWindow::buildUi()
     m_stack->addWidget(m_deliveryView);
 
     // ===== View 2: Logs =====
-    auto *logsPage = new QWidget;
-    auto *lv = new QVBoxLayout(logsPage);
-    lv->setContentsMargins(24, 16, 24, 24);
-    auto *logCard = makeCard(logsPage);
-    auto *ll = new QVBoxLayout(logCard);
-    ll->setContentsMargins(16, 16, 16, 16);
-    auto *logHead = new QHBoxLayout;
-    logHead->addWidget(new QLabel(QStringLiteral("HTTP 传输活动日志与连接监控")));
-    logHead->addStretch();
-    auto *clearLogBtn = new QPushButton(QStringLiteral("清空日志"));
-    logHead->addWidget(clearLogBtn);
-    ll->addLayout(logHead);
-    m_logList = new QListWidget;
-    ll->addWidget(m_logList, 1);
-    lv->addWidget(logCard, 1);
-    m_stack->addWidget(logsPage);
+    m_logMonitor = new LogMonitorView;
+    m_stack->addWidget(m_logMonitor);
 
     // Toast
     m_toast = new QLabel(central);
@@ -1698,7 +1685,7 @@ void MainWindow::buildUi()
     connect(selfCheckBtn, &QPushButton::clicked, this, &MainWindow::selfCheck);
     connect(uploadBtn, &QPushButton::clicked, this, &MainWindow::uploadLocalFiles);
     connect(addNicBtn, &QPushButton::clicked, this, &MainWindow::addNicIp);
-    connect(clearLogBtn, &QPushButton::clicked, this, &MainWindow::clearLogs);
+    connect(m_logMonitor, &LogMonitorView::clearClicked, this, &MainWindow::clearLogs);
     connect(m_deliveryView, &WebDeliveryView::backToDashboardClicked, this, [this] { switchView(0); });
     connect(m_deliveryView, &WebDeliveryView::uploadClicked, this, &MainWindow::uploadLocalFiles);
     connect(m_deliveryView, &WebDeliveryView::curlCopyClicked, this, &MainWindow::copyCurlForName);
@@ -1838,12 +1825,18 @@ void MainWindow::updateShareUrlUi()
         m_qrUrlLabel->setText(url);
         if (m_deliveryView)
             m_deliveryView->setHostInfo(url, true);
+        if (m_logMonitor)
+            m_logMonitor->setListenStatus(QStringLiteral("%1:%2").arg(selectedIp()).arg(m_portSpin->value()),
+                                          true);
     } else {
         m_urlLabel->setText(QStringLiteral("— (服务未启动)"));
         m_qr->setText({});
         m_qrUrlLabel->clear();
         if (m_deliveryView)
             m_deliveryView->setHostInfo({}, false);
+        if (m_logMonitor)
+            m_logMonitor->setListenStatus(QStringLiteral("%1:%2").arg(selectedIp()).arg(m_portSpin->value()),
+                                          false);
     }
 }
 
@@ -1875,8 +1868,10 @@ void MainWindow::setRunningUi(bool running)
 void MainWindow::addLog(const QString &type, const QString &msg)
 {
     m_logs->prepend(type, msg);
-    m_logList->insertItem(0, QStringLiteral("[%1] %2")
-                                 .arg(QTime::currentTime().toString(QStringLiteral("HH:mm:ss")), msg));
+    if (m_logMonitor && !m_logs->items().isEmpty()) {
+        const ActivityLog &item = m_logs->items().constFirst();
+        m_logMonitor->prependEntry(item.timestamp, item.type, item.message);
+    }
 }
 
 void MainWindow::showToast(const QString &msg)
@@ -2535,7 +2530,8 @@ void MainWindow::copyCurlForName(const QString &name)
 void MainWindow::clearLogs()
 {
     m_logs->clear();
-    m_logList->clear();
+    if (m_logMonitor)
+        m_logMonitor->clearEntries();
 }
 
 void MainWindow::onIpSelectionChanged(int)

@@ -9,6 +9,7 @@ class ActivityLogModel;
 class QrCodeWidget;
 class StatusBadgeWidget;
 class WebDeliveryView;
+class LogMonitorView;
 class QFrame;
 class QLabel;
 class QLineEdit;
@@ -125,7 +126,7 @@ private:
     QTableWidget *m_nicTable = nullptr;
     QLineEdit *m_newIpEdit = nullptr;
     QLineEdit *m_newMaskEdit = nullptr;
-    QListWidget *m_logList = nullptr;
+    LogMonitorView *m_logMonitor = nullptr;
     QLabel *m_toast = nullptr;
     QLabel *m_fileStats = nullptr;
     QLabel *m_filePathLabel = nullptr;
