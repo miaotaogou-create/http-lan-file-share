@@ -156,10 +156,17 @@ QWidget *WebDeliveryView::createHeroHeader()
     auto *badgeRow = new QHBoxLayout;
     badgeRow->setSpacing(10);
     auto *serviceBadge = new QLabel(QStringLiteral("HTTP LAN File Delivery"));
+    serviceBadge->setAttribute(Qt::WA_StyledBackground, true);
+    serviceBadge->setAlignment(Qt::AlignCenter);
     serviceBadge->setStyleSheet(QStringLiteral(
         "QLabel {"
-        "  background-color:#081D33; border:1px solid #133D6B; border-radius:12px;"
-        "  color:#38BDF8; font-size:11px; font-weight:700; padding:3px 10px;"
+        "  background-color:#083344;"
+        "  border:1px solid rgba(34,211,238,0.45);"
+        "  border-radius:999px;"
+        "  color:#67E8F9;"
+        "  font-size:11px;"
+        "  font-weight:700;"
+        "  padding:4px 12px;"
         "}"));
     m_runningLabel = new QLabel;
     m_runningLabel->setTextFormat(Qt::RichText);
