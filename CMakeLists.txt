@@ -24,6 +24,7 @@ set(APP_SOURCES
   src/StatusBadgeWidget.cpp
   src/DropUploadArea.cpp
   src/BreathingBoltIcon.cpp
+  src/WebDeliveryView.cpp
   third_party/qrcodegen/qrcodegen.cpp
 )
 

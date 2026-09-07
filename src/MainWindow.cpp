@@ -2,6 +2,7 @@
 #include "SelfCheckDialog.h"
 #include "StatusBadgeWidget.h"
 #include "DropUploadArea.h"
+#include "WebDeliveryView.h"
 
 #include "HttpFileServer.h"
 #include "NicManager.h"
@@ -1642,47 +1643,9 @@ void MainWindow::buildUi()
 
     m_stack->addWidget(managerScroll);
 
-    // ===== View 1: Portal preview =====
-    auto *portalPage = new QWidget;
-    auto *pv = new QVBoxLayout(portalPage);
-    pv->setContentsMargins(24, 16, 24, 24);
-    auto *backRow = new QHBoxLayout;
-    auto *backBtn = new QPushButton(QStringLiteral("返回 Windows 客户端控制台"));
-    backBtn->setObjectName(QStringLiteral("BackPortalBtn"));
-    backBtn->setCursor(Qt::PointingHandCursor);
-    backBtn->setIcon(makeBackArrowIcon(QColor(QStringLiteral("#67e8f9"))));
-    backBtn->setIconSize(QSize(16, 16));
-    backBtn->setFlat(false);
-    backRow->addWidget(backBtn, 0, Qt::AlignVCenter);
-    backRow->addStretch();
-    auto *previewHint = new QLabel(QStringLiteral("提货专线预览 · 真实页面请用浏览器访问共享地址"));
-    previewHint->setObjectName(QStringLiteral("Muted"));
-    backRow->addWidget(previewHint, 0, Qt::AlignVCenter);
-    pv->addLayout(backRow);
-
-    auto *portalCard = makeCard(portalPage);
-    auto *pl = new QVBoxLayout(portalCard);
-    pl->setContentsMargins(20, 20, 20, 20);
-    auto *ph = new QLabel(QStringLiteral("局域网极速文件共享与提货端"));
-    ph->setObjectName(QStringLiteral("Title"));
-    ph->setStyleSheet(QStringLiteral("font-size:20px;font-weight:700;"));
-    m_portalHostLabel = new QLabel;
-    m_portalHostLabel->setObjectName(QStringLiteral("Muted"));
-    pl->addWidget(ph);
-    pl->addWidget(m_portalHostLabel);
-    m_portalTable = new QTableWidget(0, 3);
-    m_portalTable->setIconSize(QSize(18, 18));
-    m_portalTable->setHorizontalHeaderLabels(
-        {QStringLiteral("文件名"), QStringLiteral("大小"), QStringLiteral("修改时间")});
-    m_portalTable->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
-    m_portalTable->verticalHeader()->setVisible(false);
-    m_portalTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    pl->addWidget(m_portalTable, 1);
-    auto *openReal = new QPushButton(QStringLiteral("在系统浏览器打开真实提货页"));
-    openReal->setObjectName(QStringLiteral("Primary"));
-    pl->addWidget(openReal, 0, Qt::AlignRight);
-    pv->addWidget(portalCard, 1);
-    m_stack->addWidget(portalPage);
+    // ===== View 1: Portal / Web 提货端 =====
+    m_deliveryView = new WebDeliveryView;
+    m_stack->addWidget(m_deliveryView);
 
     // ===== View 2: Logs =====
     auto *logsPage = new QWidget;
@@ -1728,12 +1691,15 @@ void MainWindow::buildUi()
     });
     connect(copyBtn, &QPushButton::clicked, this, &MainWindow::copyShareUrl);
     connect(openBtn, &QPushButton::clicked, this, &MainWindow::openPortalInBrowser);
-    connect(openReal, &QPushButton::clicked, this, &MainWindow::openPortalInBrowser);
     connect(selfCheckBtn, &QPushButton::clicked, this, &MainWindow::selfCheck);
     connect(uploadBtn, &QPushButton::clicked, this, &MainWindow::uploadLocalFiles);
     connect(addNicBtn, &QPushButton::clicked, this, &MainWindow::addNicIp);
     connect(clearLogBtn, &QPushButton::clicked, this, &MainWindow::clearLogs);
-    connect(backBtn, &QPushButton::clicked, this, [this] { switchView(0); });
+    connect(m_deliveryView, &WebDeliveryView::backToDashboardClicked, this, [this] { switchView(0); });
+    connect(m_deliveryView, &WebDeliveryView::uploadClicked, this, &MainWindow::uploadLocalFiles);
+    connect(m_deliveryView, &WebDeliveryView::curlCopyClicked, this, &MainWindow::copyCurlForName);
+    connect(m_deliveryView, &WebDeliveryView::downloadItemClicked, this,
+            [this](const QString &path, const QString &name) { downloadFileByPath(path, name); });
     connect(m_ipCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onIpSelectionChanged);
     connect(m_fileFilter, &QLineEdit::textChanged, this, &MainWindow::refreshFiles);
     connect(m_portSpin, QOverload<int>::of(&QSpinBox::valueChanged), this, [this](int) { updateShareUrlUi(); });
@@ -1866,12 +1832,14 @@ void MainWindow::updateShareUrlUi()
         m_urlLabel->setText(url);
         m_qr->setText(url);
         m_qrUrlLabel->setText(url);
-        m_portalHostLabel->setText(QStringLiteral("宿主机节点: %1").arg(url));
+        if (m_deliveryView)
+            m_deliveryView->setHostInfo(url, true);
     } else {
         m_urlLabel->setText(QStringLiteral("— (服务未启动)"));
         m_qr->setText({});
         m_qrUrlLabel->clear();
-        m_portalHostLabel->setText(QStringLiteral("服务未启动"));
+        if (m_deliveryView)
+            m_deliveryView->setHostInfo({}, false);
     }
 }
 
@@ -2166,7 +2134,6 @@ void MainWindow::refreshFiles()
 
     const auto infos = dir.entryInfoList(QDir::Files | QDir::Readable, QDir::Time);
     m_fileTable->setRowCount(0);
-    m_portalTable->setRowCount(0);
     qint64 total = 0;
     int shown = 0;
     QString priorityPath;
@@ -2206,14 +2173,6 @@ void MainWindow::refreshFiles()
         m_fileTable->setCellWidget(r, 3, makeDownloadCountCell(dlCount));
         m_fileTable->setCellWidget(r, 4, makeFileActionBar(fi.absoluteFilePath(), fi.fileName()));
 
-        const int pr = m_portalTable->rowCount();
-        m_portalTable->insertRow(pr);
-        auto *portalName = new QTableWidgetItem(fi.fileName());
-        portalName->setIcon(fileTypeIcon(fi.fileName()));
-        m_portalTable->setItem(pr, 0, portalName);
-        m_portalTable->setItem(pr, 1, new QTableWidgetItem(fmtBytes(fi.size())));
-        m_portalTable->setItem(pr, 2, new QTableWidgetItem(fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"))));
-
         if (priorityPath.isEmpty() || isArchiveName(fi.fileName())) {
             priorityPath = fi.absoluteFilePath();
             priorityName = fi.fileName();
@@ -2234,6 +2193,21 @@ void MainWindow::refreshFiles()
     updatePriorityPickup(priorityPath, priorityName, prioritySize);
     if (m_portalCount)
         m_portalCount->setText(QString::number(shown));
+    if (m_deliveryView) {
+        // 提货页自带搜索，这里传完整列表（不受控制面板过滤框影响）
+        QVector<WebDeliveryItem> allItems;
+        for (const QFileInfo &fi : dir.entryInfoList(QDir::Files | QDir::Readable, QDir::Time)) {
+            WebDeliveryItem di;
+            di.fileName = fi.fileName();
+            di.filePath = fi.absoluteFilePath();
+            di.fileSize = fmtBytes(fi.size());
+            di.modifyTime = fi.lastModified().toString(QStringLiteral("yyyy-MM-dd HH:mm:ss"));
+            di.downloadCount = m_downloadCounts.value(fi.fileName(), 0);
+            allItems.append(di);
+        }
+        m_deliveryView->setItems(allItems);
+        m_deliveryView->setHostInfo(m_running ? currentShareUrl() : QString(), m_running);
+    }
     fitTableHeight(m_fileTable);
 }
 

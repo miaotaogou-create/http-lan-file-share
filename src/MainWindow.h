@@ -8,6 +8,7 @@ class HttpFileServer;
 class ActivityLogModel;
 class QrCodeWidget;
 class StatusBadgeWidget;
+class WebDeliveryView;
 class QFrame;
 class QLabel;
 class QLineEdit;
@@ -131,8 +132,7 @@ private:
     QLineEdit *m_fileFilter = nullptr;
 
     // 内嵌提货预览
-    QTableWidget *m_portalTable = nullptr;
-    QLabel *m_portalHostLabel = nullptr;
+    WebDeliveryView *m_deliveryView = nullptr;
 
     QString m_shareRoot;
     bool m_running = false;
