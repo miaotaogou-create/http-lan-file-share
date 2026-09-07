@@ -10,6 +10,7 @@
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPixmap>
+#include <QSizePolicy>
 #include <QSvgRenderer>
 #include <QUrl>
 
@@ -36,10 +37,10 @@ DropUploadArea::DropUploadArea(QWidget *parent)
     setObjectName(QStringLiteral("DropUploadArea"));
     setAcceptDrops(true);
     setCursor(Qt::PointingHandCursor);
-    setMinimumHeight(48);
+    setFixedHeight(48);
 
     auto *lay = new QHBoxLayout(this);
-    lay->setContentsMargins(16, 10, 16, 10);
+    lay->setContentsMargins(16, 0, 16, 0);
     lay->setSpacing(8);
     lay->setAlignment(Qt::AlignCenter);
 
@@ -49,8 +50,9 @@ DropUploadArea::DropUploadArea(QWidget *parent)
 
     m_textLabel = new QLabel(QStringLiteral(
         "支持局域网千兆极速互传：拖拽任意本地文件到此处，或点击选择直接加入 HTTP 共享"));
-    m_textLabel->setWordWrap(true);
+    m_textLabel->setWordWrap(false);
     m_textLabel->setAlignment(Qt::AlignVCenter | Qt::AlignLeft);
+    m_textLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
     lay->addWidget(m_iconLabel, 0, Qt::AlignVCenter);
     lay->addWidget(m_textLabel, 0, Qt::AlignVCenter);
@@ -70,7 +72,7 @@ void DropUploadArea::setDragHover(bool hover)
             "}"
             "QLabel { background: transparent; }"));
         m_textLabel->setStyleSheet(QStringLiteral(
-            "color:#6EE7B7;font-size:12px;font-weight:700;background:transparent;"));
+            "color:#6EE7B7;font-size:13px;font-weight:700;background:transparent;"));
         m_textLabel->setText(QStringLiteral("释放文件即可加入共享目录"));
     } else {
         setStyleSheet(QStringLiteral(
@@ -85,7 +87,7 @@ void DropUploadArea::setDragHover(bool hover)
             "}"
             "QLabel { background: transparent; }"));
         m_textLabel->setStyleSheet(QStringLiteral(
-            "color:#CBD5E1;font-size:12px;background:transparent;"));
+            "color:#CBD5E1;font-size:13px;background:transparent;"));
         m_textLabel->setText(QStringLiteral(
             "支持局域网千兆极速互传：拖拽任意本地文件到此处，或点击选择直接加入 HTTP 共享"));
     }
