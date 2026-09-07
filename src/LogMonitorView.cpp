@@ -166,7 +166,7 @@ QWidget *LogMonitorView::createHeader()
 
     auto *pulse = new QLabel;
     pulse->setFixedSize(18, 18);
-    pulse->setPixmap(loadSvgPm(QStringLiteral(":/icons/activity_monitor.svg"), 18));
+    pulse->setPixmap(loadSvgPm(QStringLiteral(":/icons/activity_pulse_purple.svg"), 18));
     lay->addWidget(pulse, 0, Qt::AlignVCenter);
 
     auto *title = new QLabel(QStringLiteral("HTTP 传输活动日志与连接监控"));
